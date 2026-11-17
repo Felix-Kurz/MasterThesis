@@ -1,0 +1,8 @@
+> load.E
+go to folder with desired file
+> R
+> getwd()
+> library(haven)
+> yourdata <- read_dta("your_filename_here")
+> setwd("your_desired_dir") //my normal is setwd("/home/k2303/k232474/Documents/HSV-Projekt")
+> save(yourdata, file = ("your_new_file.dta or RData"))

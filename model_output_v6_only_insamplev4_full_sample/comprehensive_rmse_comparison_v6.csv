@@ -1,0 +1,10 @@
+"Method","Target","Observation_Type","n_obs","RMSE","MAE","Mean_Error","SD_Error"
+"XGBoost V4","LZ (true wages)","All",50100141,0.2376,0.0738,0,0.2376
+"BG Baseline","LZ (true wages)","All",50100141,0.2848,0.0832,-0.0048,0.2848
+"Tobit V1","LZ (true wages)","All",50100141,Inf,Inf,Inf,NA
+"XGBoost V4","LZ (true wages)","Censored",3591136,0.4052,0.2109,0,0.4052
+"BG Baseline","LZ (true wages)","Censored",3591136,0.5715,0.3921,-0.3247,0.4702
+"Tobit V1","LZ (true wages)","Censored",3591136,Inf,Inf,Inf,NA
+"XGBoost V4","LZ (true wages)","Uncensored",46509005,0.2194,0.0632,0,0.2194
+"BG Baseline","LZ (true wages)","Uncensored",46509005,0.2494,0.0594,0.0199,0.2486
+"Tobit V1","LZ (true wages)","Uncensored",46509005,0.3534,0.2058,0.032,0.3519

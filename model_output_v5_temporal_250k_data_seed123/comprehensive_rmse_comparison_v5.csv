@@ -1,0 +1,16 @@
+"Method","Target","Observation_Type","n_obs","RMSE","MAE","Mean_Error","SD_Error"
+"XGBoost V4","LZ (true wages)","All",1036156,0.2129,0.0676,0,0.2129
+"BG Baseline","LZ (true wages)","All",1036156,0.2859,0.0843,-0.0075,0.2858
+"XGBoost V1","LZ (true wages)","All",1036156,0.3025,0.1489,0,0.3025
+"Tobit V4","LZ (true wages)","All",1036156,0.3672,0.1236,0.0828,0.3577
+"Tobit V1","LZ (true wages)","All",1036156,Inf,Inf,Inf,NA
+"XGBoost V4","LZ (true wages)","Censored",74963,0.3038,0.1763,1e-04,0.3038
+"XGBoost V1","LZ (true wages)","Censored",74963,0.3986,0.239,-0.0585,0.3942
+"BG Baseline","LZ (true wages)","Censored",74963,0.5737,0.3937,-0.3274,0.4711
+"Tobit V4","LZ (true wages)","Censored",74963,1.0336,0.9375,0.9219,0.4674
+"Tobit V1","LZ (true wages)","Censored",74963,Inf,Inf,Inf,NA
+"XGBoost V4","LZ (true wages)","Uncensored",961193,0.2041,0.0592,0,0.2041
+"Tobit V4","LZ (true wages)","Uncensored",961193,0.2487,0.0599,0.0172,0.2481
+"BG Baseline","LZ (true wages)","Uncensored",961193,0.25,0.0601,0.0175,0.2493
+"XGBoost V1","LZ (true wages)","Uncensored",961193,0.2937,0.1419,0.0046,0.2937
+"Tobit V1","LZ (true wages)","Uncensored",961193,0.3381,0.1921,0.0287,0.3369

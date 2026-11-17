@@ -1,0 +1,7 @@
+"Evaluation_Sample","method","Observation_Type","n_obs","mean_error","median_error","sd_error","mae","rmse"
+"Censored test","XGBoost V4 Censored-Only","Censored",14541,-0.0095,0.0176,0.4485,0.2422,0.4486
+"Censored test","XGBoost V1 Censored-Only","Censored",14541,-0.0059,0.0232,0.4599,0.2541,0.4599
+"Censored test","BG Baseline Censored-Only","Censored",14541,-0.3268,-0.2767,0.4795,0.3942,0.5803
+"Censored train","XGBoost V4 Censored-Only","Censored",60422,0,0.0097,0.1917,0.1201,0.1916
+"Censored train","XGBoost V1 Censored-Only","Censored",60422,-3e-04,0.0209,0.3458,0.2042,0.3457
+"Censored train","BG Baseline Censored-Only","Censored",60422,-0.3275,-0.2811,0.469,0.3936,0.5721

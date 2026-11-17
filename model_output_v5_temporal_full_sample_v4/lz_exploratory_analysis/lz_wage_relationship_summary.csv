@@ -1,0 +1,2 @@
+n,cor_ywage_dwage,cor_ylog_dlog,mean_implied_lz_days,median_implied_lz_days,p05_implied_lz_days,p90_implied_lz_days,p95_implied_lz_days,share_ywage_le_0,share_dwage_le_0,share_implied_days_lt_30,share_implied_days_gt_366
+50100141,0.287920622008516,0.816176340354814,316.522491859834,365,99,366,366,0.000315348413889693,0.000315348413889693,0.00221783886069622,0.00758590379404406

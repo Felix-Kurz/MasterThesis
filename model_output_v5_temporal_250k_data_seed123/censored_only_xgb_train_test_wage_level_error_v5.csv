@@ -1,0 +1,13 @@
+"Evaluation_Sample","Method","Target","Observation_Type","n_obs","Wage_RMSE","Wage_MAE","Wage_Median_AE","Mean_Error","SD_Error","Mean_True_Wage","Median_True_Wage"
+"Censored test","XGBoost V4 Censored-Only","LZ daily wages (level)","All",14541,180.27,48.16,25.65,-14.4,179.7,188.58,162.1
+"Censored test","XGBoost V1 Censored-Only","LZ daily wages (level)","All",14541,183.16,50.51,27.61,-16.02,182.46,188.58,162.1
+"Censored test","BG Baseline Censored-Only","LZ daily wages (level)","All",14541,194.98,69.65,40.74,-65.15,183.78,188.58,162.1
+"Censored test","XGBoost V4 Censored-Only","LZ daily wages (level)","Censored",14541,180.27,48.16,25.65,-14.4,179.7,188.58,162.1
+"Censored test","XGBoost V1 Censored-Only","LZ daily wages (level)","Censored",14541,183.16,50.51,27.61,-16.02,182.46,188.58,162.1
+"Censored test","BG Baseline Censored-Only","LZ daily wages (level)","Censored",14541,194.98,69.65,40.74,-65.15,183.78,188.58,162.1
+"Censored train","XGBoost V4 Censored-Only","LZ daily wages (level)","All",60422,103.88,25.1,13.82,-7.93,103.58,190.59,162.7
+"Censored train","XGBoost V1 Censored-Only","LZ daily wages (level)","All",60422,235.98,43.15,22.97,-15.64,235.46,190.59,162.7
+"Censored train","BG Baseline Censored-Only","LZ daily wages (level)","All",60422,307.45,71.47,41.32,-67.12,300.04,190.59,162.7
+"Censored train","XGBoost V4 Censored-Only","LZ daily wages (level)","Censored",60422,103.88,25.1,13.82,-7.93,103.58,190.59,162.7
+"Censored train","XGBoost V1 Censored-Only","LZ daily wages (level)","Censored",60422,235.98,43.15,22.97,-15.64,235.46,190.59,162.7
+"Censored train","BG Baseline Censored-Only","LZ daily wages (level)","Censored",60422,307.45,71.47,41.32,-67.12,300.04,190.59,162.7

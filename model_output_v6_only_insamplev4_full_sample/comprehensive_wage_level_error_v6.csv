@@ -1,0 +1,10 @@
+"Method","Target","Observation_Type","n_obs","Wage_RMSE","Wage_MAE","Wage_Median_AE","Mean_Error","SD_Error","Mean_True_Wage","Median_True_Wage"
+"XGBoost V4","LZ daily wages (level)","All",50100141,169.15,8.23,1.34,-3.95,169.11,71.9,60.35
+"Tobit V1","LZ daily wages (level)","All",50099995,170.94,16.71,7.57,-2.93,170.91,71.9,60.35
+"BG Baseline","LZ daily wages (level)","All",50100141,171.05,9.87,0.55,-6.54,170.93,71.9,60.35
+"XGBoost V4","LZ daily wages (level)","Censored",3591136,403.31,47,22.26,-18.31,402.89,192.42,162.85
+"Tobit V1","LZ daily wages (level)","Censored",3590990,409.04,65.11,36.38,-12.1,408.86,192.42,162.85
+"BG Baseline","LZ daily wages (level)","Censored",3591136,412.94,73.17,41.36,-68.51,407.22,192.42,162.85
+"XGBoost V4","LZ daily wages (level)","Uncensored",46509005,135.14,5.24,1.21,-2.85,135.11,62.6,58.03
+"BG Baseline","LZ daily wages (level)","Uncensored",46509005,135.46,4.98,0.42,-1.75,135.45,62.6,58.03
+"Tobit V1","LZ daily wages (level)","Uncensored",46509005,136.22,12.97,7.01,-2.22,136.21,62.6,58.03

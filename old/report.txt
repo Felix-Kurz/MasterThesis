@@ -1,0 +1,831 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{comment}
+
+\geometry{a4paper, margin=1in}
+
+% Code styling
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!50!black},
+    stringstyle=\color{red}
+}
+
+\title{XGBoost Model for Wage De-censoring:\\Technical Documentation}
+\author{Felix Kurz}
+\date{December 2024}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Executive Summary}
+
+This document describes an XGBoost machine learning model developed to predict uncensored wages from censored Beitragsgrundlagen (BG) data. The model is trained on observations where both censored BG data and uncensored Lohnzettel (LZ) data are available, learning to predict true wages from BG characteristics. Once trained, the model can be applied to future BG data where LZ information is unavailable, effectively de-censoring top-coded wages.
+
+\textbf{Sample:} 10,000 randomly sampled workers (penr) from Beitragsgrundlagen data, years 1994--2012.
+
+\section{Data Preparation and Variable Construction}
+
+\subsection{Target Variable}
+
+\subsubsection{dailywage\_final (from LZ data)}
+
+\begin{itemize}
+    \item \textbf{Source:} Lohnzettel dataset (\texttt{lz\_dwage})
+    \item \textbf{Construction:}
+    \begin{enumerate}
+        \item Start with daily wage in nominal Euros from LZ
+        \item Adjust to 2000 Euros using CPI: $\text{lz\_dwage} \times \text{cpi}_{2000}$
+        \item Ensure positive values: $\max(\text{lz\_dwage} \times \text{cpi}_{2000}, 1)$
+        \item Log-transform: $\ln(\text{lz\_dwage} \times \text{cpi}_{2000})$
+    \end{enumerate}
+    \item \textbf{Data merge:} LZ data joined to BG data by (penr, benr, contryear)
+    \item \textbf{Note:} This is the ``gold standard'' true wage used for training. For later versions, only BG features from the Social Security data will be available, if current circumstances continue.
+\end{itemize}
+
+\subsection{Training Dataset Construction}
+
+\textbf{training\_data}
+\begin{itemize}
+    \item \textbf{Base:} \texttt{tobit\_data} (all observations with processed BG data)
+    \item \textbf{Merge with LZ:} Left join with Lohnzettel on (penr, benr, contryear)
+    \item \textbf{Filter:} Keep only observations where \texttt{lz\_dwage\_log} is not missing
+    \item \textbf{Result:} Subset where both censored BG and uncensored LZ wages are available
+\end{itemize}
+
+\subsection{Feature Variables (Predictors)}
+
+All features are derived exclusively from BG data and administrative records to ensure they are available in production when LZ data is unavailable.
+
+\subsubsection{Individual Characteristics}
+
+\paragraph{age}
+\begin{itemize}
+    \item \textbf{Source:} Administrative data (Stammdaten)
+    \item \textbf{Construction:} $\text{age} = \text{contryear} - \text{birthyear}$
+    \item \textbf{Range:} Restricted to 20--60 years during data preparation
+    \item \textbf{Purpose:} Captures life-cycle wage patterns
+\end{itemize}
+
+\paragraph{birthyear}
+\begin{itemize}
+    \item \textbf{Source:} Administrative data (Stammdaten)
+    \item \textbf{Construction:} Direct from \texttt{stammdaten\_uniqe\_2022}
+    \item \textbf{Purpose:} Captures cohort effects beyond age
+\end{itemize}
+
+\paragraph{frau (Gender)}
+\begin{itemize}
+    \item \textbf{Source:} Administrative data (Stammdaten)
+    \item \textbf{Construction:} Binary indicator (1 = female, 0 = male) \newline
+    Direct from \texttt{stammdaten\_uniqe\_2022}
+    \item \textbf{Purpose:} Captures gender wage gaps
+\end{itemize}
+
+\subsubsection{Firm Characteristics}
+
+\paragraph{firm\_size}
+\begin{itemize}
+    \item \textbf{Source:} Derived from BG data
+    \item \textbf{Construction:} Count of unique workers per (benr, contryear) combination 
+    \item \textbf{Method:} Group by company number in combination with year and count the remainig unique observations
+    \item \textbf{Purpose:} Firm size wage premium
+\end{itemize}
+
+\paragraph{firm\_size\_square}
+\begin{itemize}
+    \item \textbf{Source:} Derived from \texttt{firm\_size}
+    \item \textbf{Construction:} $\frac{(\text{firm\_size})^2}{100}$
+    \item \textbf{Purpose:} Captures non-linear relationship between firm size and wages
+    \item \textbf{Note:} Divided by 100 for numerical scaling
+\end{itemize}
+
+\paragraph{oneperson\_dummy}
+\begin{itemize}
+    \item \textbf{Source:} Derived from \texttt{firm\_size}
+    \item \textbf{Construction:} $\mathbb{1}(\text{firm\_size} = 1)$
+    \item \textbf{Purpose:} Identifies self-employed or single-person firms
+\end{itemize}
+
+\paragraph{smallfirm\_dummy}
+\begin{itemize}
+    \item \textbf{Source:} Derived from \texttt{firm\_size}
+    \item \textbf{Construction:} $\mathbb{1}(\text{firm\_size} < 10)$
+\end{itemize}
+
+\subsubsection{Individual Wage History}
+
+\paragraph{mean\_wage}
+\begin{itemize}
+    \item \textbf{Source:} Individual's wage history from BG data
+    \item \textbf{Construction:} Leave-one-out mean to avoid mechanical correlation
+    \begin{equation}
+        \text{mean\_wage}_i = \begin{cases}
+            \frac{\sum_{t} w_{it} - w_{it}}{n_i - 1} & \text{if } n_i > 1\\
+            w_{it} & \text{if } n_i = 1
+        \end{cases}
+    \end{equation}
+    where $w_{it}$ is the wage for individual $i$ in year $t$, and $n_i$ is the number of years observed.
+    \item \textbf{Purpose:} Individual fixed effect, captures persistent wage components
+    \item \textbf{Important:} Uses BG wages (censored), not LZ wages
+\end{itemize}
+
+\paragraph{mean\_censored}
+\begin{itemize}
+    \item \textbf{Source:} Individual's censoring history from BG data
+    \item \textbf{Construction:} Leave-one-out mean censoring rate
+    \begin{equation}
+        \text{mean\_censored}_i = \frac{\sum_{t} \mathbb{1}(\text{censored}_{it}) - \mathbb{1}(\text{censored}_{it})}{n_i - 1}
+    \end{equation}
+    \item \textbf{Range:} 0 to 1 (proportion of years censored)
+    \item \textbf{Purpose:} Indicates individual's tendency to earn above top-coding thresholds
+\end{itemize}
+
+\paragraph{num\_years}
+\begin{itemize}
+    \item \textbf{Source:} Derived from BG data
+    \item \textbf{Construction:} Count of years individual appears in data
+    \item \textbf{Purpose:} Experience proxy and data quality indicator
+\end{itemize}
+
+\paragraph{oneyear\_dummy}
+\begin{itemize}
+    \item \textbf{Source:} Derived from \texttt{num\_years}
+    \item \textbf{Construction:} $\mathbb{1}(\text{num\_years} = 1)$
+    \item \textbf{Purpose:} Flags workers with limited history (less reliable wage estimates)
+\end{itemize}
+
+\subsubsection{Coworker Characteristics}
+
+\paragraph{mean\_wage\_coworkers}
+\begin{itemize}
+    \item \textbf{Source:} Coworkers' wages in same firm-year from BG data
+    \item \textbf{Construction:} Leave-one-out mean within (benr, contryear)
+    \begin{equation}
+        \text{mean\_wage\_coworkers}_{i,f,t} = \frac{\sum_{j \in f,t} w_{jt} - w_{it}}{n_{ft} - 1}
+    \end{equation}
+    where $f$ is the firm, $t$ is the year, and $n_{ft}$ is the number of workers in firm $f$ at year $t$.
+    \item \textbf{Purpose:} Firm wage premium, captures match quality
+    \item \textbf{Note:} Uses censored BG wages
+\end{itemize}
+
+\paragraph{mean\_censored\_coworkers}
+\begin{itemize}
+    \item \textbf{Source:} Coworkers' censoring status from BG data
+    \item \textbf{Construction:} Leave-one-out mean censoring rate in firm-year
+    \begin{equation}
+        \text{mean\_censored\_coworkers}_{i,f,t} = \frac{\sum_{j \in f,t} \mathbb{1}(\text{censored}_{jt}) - \mathbb{1}(\text{censored}_{it})}{n_{ft} - 1}
+    \end{equation}
+    \item \textbf{Purpose:} Indicates firm's position in wage distribution
+\end{itemize}
+
+\subsubsection{Censoring Information}
+
+\paragraph{interval\_lower}
+\begin{itemize}
+    \item \textbf{Source:} BG data
+    \item \textbf{Construction:} Observed log daily wage from BG (censored)
+    \item \textbf{Purpose:} Lower bound of true wage for all observations
+\end{itemize}
+
+\paragraph{interval\_upper}
+\begin{itemize}
+    \item \textbf{Source:} Derived from top-coding thresholds and censoring status
+    \item \textbf{Construction:}
+    \begin{align}
+        \text{topcode\_threshold} &= \text{topcoding}[\text{contryear} - 1971]\\
+        \text{daily\_topcode} &= \frac{\text{topcode\_threshold} \times 14}{30}\\
+        \text{log\_daily\_topcode} &= \ln(\text{daily\_topcode} \times \text{cpi}_{2000})\\
+        \text{interval\_upper} &= \begin{cases}
+            \text{log\_daily\_topcode} & \text{if censored} = 1\\
+            \text{dailywage\_final} & \text{if censored} = 0
+        \end{cases}
+    \end{align}
+    \item \textbf{Purpose:} Upper bound of true wage, only differs from lower bound for censored observations
+\end{itemize}
+
+\paragraph{bg\_censored\_flag}
+\begin{itemize}
+    \item \textbf{Source:} Derived from multiple censoring rules in BG data
+    \item \textbf{Construction:} Multi-step process:
+    \begin{enumerate}
+        \item Initial censoring based on comparison to annual thresholds:
+        \begin{itemize}
+            \item If daily wage $\times$ 30 days exceeds threshold
+            \item If annual wage exceeds threshold
+            \item If base wage component exceeds threshold
+        \end{itemize}
+        \item Modal daily wage imputation for censored observations
+        \item Censoring extended to all wages at or above maximum censored wage
+    \end{enumerate}
+    \item \textbf{Purpose:} Indicator for whether observation is top-coded
+\end{itemize}
+
+\section{Model Architecture and Configuration}
+
+\subsection{Model Type: XGBoost Gradient Boosting}
+
+\begin{itemize}
+    \item \textbf{Algorithm:} Extreme Gradient Boosting (XGBoost)
+    \item \textbf{Package:} \texttt{xgboost} in R
+    \item \textbf{Model class:} Regression (\texttt{reg:squarederror})
+    \item \textbf{Boosting type:} Tree-based gradient boosting
+\end{itemize}
+
+\subsection{Model Objective}
+
+\textbf{Prediction task:} Predict true uncensored log daily wage (LZ) from censored BG features
+
+\textbf{Mathematical formulation:}
+\begin{equation}
+    \hat{y} = f(X_{BG})
+\end{equation}
+where:
+\begin{itemize}
+    \item $\hat{y}$ = predicted log daily wage (approximates LZ true wage)
+    \item $X_{BG}$ = feature vector from BG data
+    \item $f$ = XGBoost model
+\end{itemize}
+
+\textbf{Loss function:} Root Mean Squared Error (RMSE)
+\begin{equation}
+    \text{RMSE} = \sqrt{\frac{1}{n}\sum_{i=1}^{n}(\hat{y}_i - y_i^{\text{true}})^2}
+\end{equation}
+where $y^{\text{true}}$ = \texttt{lz\_dwage\_log}
+
+\subsection{Hyperparameters}
+
+The model is configured with the following hyperparameters:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Parameter} & \textbf{Value} & \textbf{Purpose} \\
+\midrule
+objective & reg:squarederror & Regression with MSE loss \\
+eval\_metric & rmse & Evaluation metric \\
+eta & 0.1 & Learning rate (shrinkage) \\
+max\_depth & 6 & Maximum tree depth \\
+min\_child\_weight & 1 & Min sum of instance weight in child \\
+subsample & 0.8 & Fraction of samples for each tree \\
+colsample\_bytree & 0.8 & Fraction of features for each tree \\
+reg\_alpha & 0.1 & L1 regularization \\
+reg\_lambda & 1 & L2 regularization \\
+seed & 123 & Reproducibility \\
+\bottomrule
+\end{tabular}
+\caption{XGBoost hyperparameters and their purposes}
+\label{tab:hyperparameters}
+\end{table}
+
+\textbf{Hyperparameter explanations:}
+\begin{itemize}
+    \item \textbf{eta (0.1):} Conservative learning rate reduces overfitting
+    \item \textbf{max\_depth (6):} Moderately deep trees capture interactions without overfitting
+    \item \textbf{subsample (0.8):} Prevents overfitting through random sampling
+    \item \textbf{colsample\_bytree (0.8):} Feature bagging for robustness
+    \item \textbf{reg\_alpha \& reg\_lambda:} Regularization to prevent overfitting
+\end{itemize}
+
+\subsection{Training Process}
+
+\subsubsection{Cross-validation for optimal rounds}
+
+The optimal number of boosting rounds is determined using 5-fold cross-validation with early stopping:
+
+\begin{lstlisting}[language=R]
+xgb_cv <- xgb.cv(
+  params = xgb_params,
+  data = dtrain,
+  nrounds = 1000,              # Maximum iterations
+  nfold = 5,                   # 5-fold cross-validation
+  early_stopping_rounds = 50,  # Stop if no improvement
+  verbose = FALSE
+)
+
+best_nrounds <- xgb_cv$best_iteration
+\end{lstlisting}
+
+\subsubsection{Final model training}
+
+\begin{lstlisting}[language=R]
+xgb_model <- xgb.train(
+  params = xgb_params,
+  data = dtrain,
+  nrounds = best_nrounds,
+  watchlist = list(train = dtrain, test = dtest),
+  verbose = FALSE
+)
+\end{lstlisting}
+
+\subsection{Train/Test Split}
+
+\begin{itemize}
+    \item \textbf{Split ratio:} 80\% training, 20\% testing
+    \item \textbf{Random seed:} 123 (for reproducibility)
+    \item \textbf{Purpose of split:}
+    \begin{itemize}
+        \item Training set: Model learning
+        \item Test set: Out-of-sample performance evaluation
+    \end{itemize}
+\end{itemize}
+
+\section{Estimation Strategy}
+
+\subsection{Single Pooled Model Approach}
+
+\textbf{Unlike Tobit model} (which estimates separate models by gender $\times$ age group $\times$ year):
+\begin{itemize}
+    \item \textbf{XGBoost uses one pooled model} across all observations
+    \item Gender and age are included as features, not stratification variables
+    \item Model learns interactions automatically through tree structure
+\end{itemize}
+
+\textbf{Advantages:}
+\begin{itemize}
+    \item Borrows strength across groups
+    \item Learns complex interactions % (e.g., gender $\times$ age $\times$ firm size)
+    \item Captures non-linear patterns
+\end{itemize}
+
+\subsection{Training Logic}
+
+\textbf{Phase 1: Learning from overlap} (training phase)
+
+For observations with both BG and LZ data:
+\begin{itemize}
+    \item \textbf{Input:} BG features (censored wages, firm info, individual history)
+    \item \textbf{Target:} LZ true wages (uncensored)
+    \item \textbf{Model learns:} How to recover true wages from censored BG patterns
+\end{itemize}
+
+\textbf{Phase 2: Production use} (future application)
+
+For observations with only BG data (no LZ):
+\begin{itemize}
+    \item \textbf{Input:} Same BG features
+    \item \textbf{Output:} Predicted true wages (de-censored estimates)
+    \item The model applies learned patterns to estimate what LZ wage would be
+\end{itemize}
+
+\subsection{Key Insight: Censoring Pattern Learning}
+
+The model learns that:
+\begin{enumerate}
+    \item \textbf{Censored observations} (\texttt{interval\_upper} $>$ \texttt{interval\_lower}) have true wages above threshold
+    \item \textbf{Individual history} (\texttt{mean\_censored}, \texttt{mean\_wage}) predicts how far above
+    \item \textbf{Coworker patterns} (\texttt{mean\_wage\_coworkers}, \texttt{mean\_censored\_coworkers}) indicate firm quality
+    \item \textbf{Demographics} (age, gender) interact with censoring patterns
+\end{enumerate}
+
+\textbf{Example learning pattern:}
+
+If: censored = 1 AND mean\_censored = 0.8 AND mean\_wage\_coworkers = 5.2
+
+Then: True wage likely 0.3--0.5 log points above threshold
+
+\section{Model Performance Evaluation}
+
+\subsection{Comparison Approaches}
+
+\textbf{Three wage measures compared:}
+\begin{enumerate}
+    \item \textbf{BG Original:} Censored wages from Beitragsgrundlagen (current practice)
+    \item \textbf{XGBoost Predicted:} Model predictions (proposed method)
+    \item \textbf{LZ Uncensored:} True wages from Lohnzettel (gold standard, test set only)
+\end{enumerate}
+
+\subsection{Performance Metrics}
+
+\textbf{Primary metrics:}
+\begin{itemize}
+    \item \textbf{RMSE} (Root Mean Squared Error): $\sqrt{\frac{1}{n}\sum(\text{predicted} - \text{true})^2}$
+    \item \textbf{R²} (R-squared): Proportion of variance explained
+    \item \textbf{MAE} (Mean Absolute Error): $\frac{1}{n}\sum|\text{predicted} - \text{true}|$
+\end{itemize}
+
+\textbf{Computed for:}
+\begin{itemize}
+    \item Overall (all observations)
+    \item By censoring status (censored vs uncensored)
+    \item Train vs test sets
+\end{itemize}
+
+\subsection{Baseline Comparison}
+
+\textbf{Current method} (BG wages):
+\begin{equation}
+    \text{RMSE}_{BG} = \sqrt{\frac{1}{n}\sum(\text{BG\_wage} - \text{LZ\_true})^2}
+\end{equation}
+
+\textbf{XGBoost improvement:}
+\begin{align}
+    \text{Improvement} &= \text{RMSE}_{BG} - \text{RMSE}_{XGBoost}\\
+    \text{Relative improvement} &= \frac{\text{RMSE}_{BG} - \text{RMSE}_{XGBoost}}{\text{RMSE}_{BG}}
+\end{align}
+
+\section{Visualization and Diagnostic Plots}
+
+\subsection{Distribution Comparisons}
+
+\textbf{Plot 1 (P1):} Overall wage distribution
+\begin{itemize}
+    \item Histograms of BG Original vs XGBoost Predicted
+    \item Shows if model shifts distribution appropriately
+\end{itemize}
+
+\textbf{Plot 2 (P2):} Distribution by censoring status
+\begin{itemize}
+    \item Left panel: Uncensored observations
+    \item Right panel: Censored observations
+    \item Reveals model behavior for each group
+\end{itemize}
+
+\subsection{Three-Way Comparisons with Gold Standard}
+
+\textbf{Plot 11 (P11):} All three wage sources (overall)
+\begin{itemize}
+    \item BG Original (blue): Censored wages
+    \item XGBoost Predicted (red): Model estimates
+    \item LZ Uncensored (green): True wages
+    \item Shows model's ability to approximate true distribution
+\end{itemize}
+
+\textbf{Plot 12 (P12):} Three-way by censoring status
+\begin{itemize}
+    \item Reveals if model successfully de-censors top-coded wages
+    \item Shows if uncensored wages remain accurate
+\end{itemize}
+
+\textbf{Plot 13 (P13):} Density overlay
+\begin{itemize}
+    \item Smooth density estimates for visual comparison
+    \item Easier to see distributional differences than histograms
+\end{itemize}
+
+\subsection{Interpretation Guidelines}
+
+\textbf{Success indicators:}
+\begin{itemize}
+    \item XGBoost distribution closer to LZ than BG (especially in censored group)
+    \item Right tail of XGBoost extends beyond BG censoring threshold
+    \item Uncensored XGBoost predictions match BG and LZ closely
+\end{itemize}
+
+\textbf{Potential issues:}
+\begin{itemize}
+    \item Over-prediction: XGBoost consistently above LZ
+    \item Under-prediction: XGBoost doesn't extend far enough into right tail
+    \item Variance mismatch: Too narrow or too wide distribution
+\end{itemize}
+
+\section{Feature Importance Analysis}
+
+\subsection{XGBoost Feature Importance Metrics}
+
+\textbf{Gain:} Total improvement in loss function from splits on feature
+\begin{itemize}
+    \item Higher gain = more important for prediction accuracy
+    \item Reports: \texttt{importance\_matrix\_v2}
+\end{itemize}
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item Top features drive most of model's predictive power
+    \item Can identify which BG characteristics best predict true wages
+    \item Compare to economic intuition (e.g., should coworker wages matter?)
+\end{itemize}
+
+\subsection{Expected Important Features}
+
+\textbf{Hypothesized ranking:}
+\begin{enumerate}
+    \item \texttt{interval\_lower} / \texttt{interval\_upper}: Direct wage information
+    \item \texttt{mean\_wage}: Individual fixed effect
+    \item \texttt{mean\_wage\_coworkers}: Firm wage premium
+    \item \texttt{bg\_censored\_flag}: Indicates top-coding
+    \item \texttt{age}: Life-cycle profile
+    \item \texttt{firm\_size}: Firm size premium
+\end{enumerate}
+
+\begin{comment}
+\section{Model Versions and Extensions}
+
+\subsection{Version Comparison}
+
+\textbf{V1} (Original feature set):
+\begin{itemize}
+    \item Fewer features, faster training
+    \item Baseline performance
+\end{itemize}
+
+\textbf{V2} (Expanded feature set):
+\begin{itemize}
+    \item Includes all Tobit features + additional BG features
+    \item Tests if more information improves predictions
+    \item Reports relative improvement: V2\_RMSE - V1\_RMSE
+\end{itemize}
+
+\subsection{Future Extensions}
+
+\textbf{Potential improvements:}
+\begin{enumerate}
+    \item \textbf{Industry controls:} Add NACE codes
+    \item \textbf{Regional controls:} Add Bundesland
+    \item \textbf{Temporal features:} Year trends, economic conditions
+    \item \textbf{Interaction terms:} Manual feature engineering
+    \item \textbf{Ensemble methods:} Combine XGBoost with Tobit predictions
+\end{enumerate}
+
+\section{Production Deployment}
+
+\subsection{Prediction Function}
+
+\begin{lstlisting}[language=R]
+predict_true_wage <- function(bg_data, 
+                              model = xgb_model_v2, 
+                              feature_columns = feature_cols_v2) {
+  
+  # Extract and prepare features
+  prediction_features <- bg_data %>%
+    select(all_of(feature_columns)) %>%
+    mutate(across(everything(), 
+           ~ifelse(is.na(.) | is.infinite(.), 0, .))) %>%
+    as.matrix()
+  
+  # Predict
+  predicted_wages <- predict(model, 
+                            xgb.DMatrix(data = prediction_features))
+  
+  return(predicted_wages)
+}
+\end{lstlisting}
+
+\subsection{Application to Future Data}
+
+\textbf{Requirements:}
+\begin{enumerate}
+    \item New BG data with same variable construction
+    \item All feature variables must be computed identically
+    \item CPI adjustment to 2000 Euros
+    \item Log transformation
+\end{enumerate}
+
+\textbf{Output:} De-censored log daily wage estimates
+
+\subsection{Limitations and Assumptions}
+
+\textbf{Key assumptions:}
+\begin{enumerate}
+    \item Relationship between BG features and LZ wages remains stable over time
+    \item Censoring rules haven't changed substantially
+    \item Sample representativeness: Training sample generalizes to full population
+\end{enumerate}
+
+\textbf{Limitations:}
+\begin{enumerate}
+    \item Predictions only as good as training data overlap (BG-LZ match)
+    \item Cannot predict beyond highest observed LZ wages
+    \item Model uncertainty not quantified (point predictions only)
+    \item Requires re-training if censoring thresholds change significantly
+\end{enumerate}
+
+\section{Comparison with Tobit Approach}
+
+\subsection{Methodological Differences}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{3cm}p{5cm}p{5cm}}
+\toprule
+\textbf{Aspect} & \textbf{Tobit Model} & \textbf{XGBoost Model} \\
+\midrule
+Estimation & Separate models per gender$\times$age$\times$year & Single pooled model \\
+Functional form & Linear (log-linear) & Non-linear (tree-based) \\
+Interactions & Must specify manually & Learned automatically \\
+Censoring & Explicitly modeled intervals & Learned from patterns \\
+Interpretability & High (coefficients) & Lower (black box) \\
+Flexibility & Limited to specified form & Highly flexible \\
+Sample size needs & Requires sufficient obs per group & Leverages full sample \\
+Extrapolation & Based on linear trends & Based on tree splits \\
+\bottomrule
+\end{tabular}
+\caption{Comparison of Tobit and XGBoost approaches}
+\label{tab:comparison}
+\end{table}
+
+\subsection{Expected Performance Differences}
+
+\textbf{XGBoost advantages:}
+\begin{itemize}
+    \item Captures non-linearities in age-wage profiles
+    \item Learns complex interactions (e.g., gender $\times$ firm size $\times$ censoring)
+    \item No need to specify functional form
+    \item Robust to outliers
+\end{itemize}
+
+\textbf{Tobit advantages:}
+\begin{itemize}
+    \item Economic interpretability
+    \item Explicit uncertainty quantification
+    \item Well-understood statistical properties
+    \item Handles censoring mechanism directly
+\end{itemize}
+
+\subsection{Complementary Use}
+
+\textbf{Recommendation:} Use both approaches
+\begin{itemize}
+    \item Tobit for interpretation and statistical inference
+    \item XGBoost for prediction accuracy
+    \item Compare predictions as robustness check
+    \item Ensemble: Average predictions for final estimates
+\end{itemize}
+
+\section{Summary Statistics and Results}
+
+\subsection{Sample Composition}
+
+\textbf{To be filled with actual results:}
+\begin{itemize}
+    \item Total observations in training data: [N]
+    \item Training set: [N\_train] (80\%)
+    \item Test set: [N\_test] (20\%)
+    \item Censored observations: [N\_censored] ([pct]\%)
+    \item Uncensored observations: [N\_uncensored] ([pct]\%)
+\end{itemize}
+
+\subsection{Model Performance Summary}
+
+\textbf{Test Set Performance:}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Method} & \textbf{RMSE} & \textbf{R²} & \textbf{MAE} & \textbf{\% Better than BG} \\
+\midrule
+BG Original & [X] & [X] & [X] & --- \\
+XGBoost V2 & [X] & [X] & [X] & [X]\% \\
+Improvement & [X] & [X] & [X] & --- \\
+\bottomrule
+\end{tabular}
+\caption{Model performance on test set}
+\label{tab:performance}
+\end{table}
+
+\textbf{By Censoring Status:}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lccc}
+\toprule
+\textbf{Group} & \textbf{BG RMSE} & \textbf{XGB RMSE} & \textbf{Improvement} \\
+\midrule
+Uncensored & [X] & [X] & [X] \\
+Censored & [X] & [X] & [X] \\
+\bottomrule
+\end{tabular}
+\caption{Performance by censoring status}
+\label{tab:censoring_performance}
+\end{table}
+
+\subsection{Distribution Statistics}
+
+\textbf{Wage Distributions (Log Daily Wage, 2000 Euros):}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Measure} & \textbf{BG Original} & \textbf{XGB Predicted} & \textbf{LZ True} & \textbf{Diff (XGB - LZ)} \\
+\midrule
+Mean & [X] & [X] & [X] & [X] \\
+Median & [X] & [X] & [X] & [X] \\
+SD & [X] & [X] & [X] & [X] \\
+P10 & [X] & [X] & [X] & [X] \\
+P90 & [X] & [X] & [X] & [X] \\
+P95 & [X] & [X] & [X] & [X] \\
+P99 & [X] & [X] & [X] & [X] \\
+\bottomrule
+\end{tabular}
+\caption{Wage distribution statistics}
+\label{tab:wage_distribution}
+\end{table}
+
+\section{Conclusions and Recommendations}
+
+\subsection{Key Findings}
+
+\begin{enumerate}
+    \item \textbf{Model successfully de-censors wages:} [Describe if right tail extends appropriately]
+    \item \textbf{Performance gain over BG:} [X]\% RMSE reduction
+    \item \textbf{Most important features:} [List top 5 from feature importance]
+    \item \textbf{Censored vs uncensored performance:} [Compare accuracy across groups]
+\end{enumerate}
+
+\subsection{Practical Implications}
+
+\textbf{For wage research:}
+\begin{itemize}
+    \item XGBoost predictions can substitute for unavailable LZ data
+    \item Reduces bias from censoring in wage inequality studies
+    \item Enables analysis of high-wage workers
+\end{itemize}
+
+\textbf{For policy analysis:}
+\begin{itemize}
+    \item More accurate wage estimates for top earners
+    \item Better understanding of high-wage employment
+    \item Improved estimation of wage distributions
+\end{itemize}
+
+\subsection{Next Steps}
+
+\begin{enumerate}
+    \item \textbf{Validate on additional years} (2013+)
+    \item \textbf{Incorporate industry and regional controls}
+    \item \textbf{Develop uncertainty quantification} (prediction intervals)
+    \item \textbf{Compare with other ML methods} (Random Forest, Neural Networks)
+    \item \textbf{Create ensemble with Tobit predictions}
+\end{enumerate}
+
+\appendix
+
+\section{Code Structure}
+
+\subsection{Main Workflow}
+
+\begin{lstlisting}[language=R]
+# 1. Data preparation
+training_data <- tobit_data %>%
+  left_join(lohnzettel) %>%
+  filter(!is.na(lz_dwage_log))
+
+# 2. Feature matrix
+X_features <- training_data %>%
+  select(all_of(feature_cols)) %>%
+  as.matrix()
+
+y_target <- training_data$lz_dwage_log
+
+# 3. Train/test split
+train_indices <- sample(...)
+X_train <- X_features[train_indices, ]
+y_train <- y_target[train_indices]
+
+# 4. Cross-validation
+xgb_cv <- xgb.cv(...)
+best_nrounds <- xgb_cv$best_iteration
+
+# 5. Final model
+xgb_model <- xgb.train(
+  params = xgb_params,
+  nrounds = best_nrounds
+)
+
+# 6. Predictions
+test_pred <- predict(xgb_model, dtest)
+
+# 7. Evaluation
+rmse <- sqrt(mean((test_pred - y_test)^2))
+
+# 8. Plots
+# Generate P1, P2, P11, P12, P13
+\end{lstlisting}
+
+\subsection{Required Packages}
+
+\begin{lstlisting}[language=R]
+library(xgboost)    # Model training
+library(dplyr)      # Data manipulation  
+library(tidyr)      # Data reshaping
+library(ggplot2)    # Visualization
+\end{lstlisting}
+
+
+
+
+
+\end{comment}
+\end{document}
