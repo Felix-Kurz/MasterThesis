@@ -1,0 +1,749 @@
+\NeedsTeXFormat{LaTeX2e}
+\documentclass[12pt,titlepage,oneside]{book}
+% statt oneside kann mittels twoside ein doppelseitiges Dokument erstellt werden
+
+\usepackage{graphicx,setspace}
+%\usepackage[latin1]{inputenc}   % fuer dt. zeichensaetze
+\usepackage[german]{babel}\frenchspacing
+\usepackage[papersize={210mm,297mm},hdivide={28mm,*,22mm},vdivide={25mm,*,20mm},dvips,mag=1000,nofoot]{geometry}
+\usepackage{amsmath}% fuer den Mathematikmodus
+\usepackage{amssymb}% fuer den Mathematikmodus
+%\usepackage[notref]{showkeys}% Zum Anzeigen der vergebenen Labels Ausschalten fuer Endversion
+\usepackage[natbibapa]{apacite} % fuer Literaturverzeichnis
+\usepackage[bf]{caption}% fur Ueber- und Unterschriften von Tabellen und Grafiken
+\usepackage{fancyhdr}% fuer Kopf- und Fusszeilen
+\usepackage{graphicx}
+
+
+\newcommand{\cfigure}[4]{ %zum Einfuegen von Grafiken
+\begin{figure}[t]
+\begin{center}
+\begin{minipage}{#4 cm}
+\includegraphics[width = #4 cm,clip]{#3}
+\caption{#1 \label{#2}}
+\end{minipage}
+\end{center}
+\end{figure}}
+
+\DeclareMathOperator{\E}{E}
+\DeclareMathOperator{\V}{V}
+
+
+\begin{document}
+%********************************************************************************
+
+
+\setlength{\parindent}{0mm} % kein Einruecken bei Absatzbeginn
+\setlength\belowcaptionskip{6pt} % Abstand zwischen Beschriftung und Grafik bzw. Tabelle
+
+
+\include{cover_bakk}
+
+
+% Die folgenden Zeilen funktionieren nur mit dem Paket fancyhdr.sty
+
+%Kopfzeile - Kapitelseite mit Kopfzeile
+
+\fancypagestyle{plain}
+\cfoot{}
+\lhead[\fancyplain{\thepage}{\thepage}]{\fancyplain{\rule[-0.75mm]{\textwidth}{0.4pt}
+\let\uppercase\relax\rightmark}{\rule[-0.75mm]{\textwidth}{0.4pt}
+\let\uppercase\relax\rightmark}}
+\rhead[\fancyplain{{\rule[-0.75mm]{\textwidth}{0.4pt}}
+\let\uppercase\relax\leftmark}{{\rule[-0.75mm]{\textwidth}{0.4pt}}
+\let\uppercase\relax\leftmark}]{\fancyplain{\thepage}{\thepage}}
+
+
+
+%Abschnittsueberschriften in Kopf- und Fueezeilen
+\renewcommand{\chaptermark}[1]{\markboth {\thechapter\ #1}{\thechapter\ #1}}
+\renewcommand{\sectionmark}[1]{\markright{\thesection\ #1}}
+\renewcommand{\arraystretch}{1.5}
+
+%Leere Seite vor neuem Kapitel ohne Kopf- oder Fusszeile
+\makeatletter
+\def\cleardoublepage{\clearpage\if@twoside \ifodd\c@page\else
+  \hbox{}
+  \thispagestyle{empty}
+  \newpage
+  \if@twocolumn\hbox{}\newpage\fi\fi\fi}
+\makeatother
+
+\renewcommand{\baselinestretch}{1.3} %1.3-facher Zeilenabstand
+\renewcommand{\headrulewidth}{0.4pt}
+
+\tableofcontents
+\listoffigures
+
+%***********************************************************************
+
+% Kapitel und Abschnitte
+
+\chapter{Einleitung} \label{intro}
+%Beschreibung des Themengebietes \\
+Im Gegensatz zu statistischen Modellen bieten Methoden des Maschinellen Lernens (ML) wie z. B. Neuronale Netze (NN) keinen Einblick in die Modellierung von Abhängigkeiten. Es sind lediglich Inputs und Outputs bekannt, nicht aber die Entscheidungslogik im Modell selbst. Deshalb werden sie oft als Black Box bezeichnet. \\
+Ein häufig verwendetes Beispiel für ein Regressionsproblem ist die Vorhersage von Immobilienpreisen basierend auf verschiedenen Merkmalen wie Standort, Größe und Baujahr. Im statistischen Modellierungsansatz könnte zum Beispiel eine lineare Regression benutzt werden, um den Zusammenhang zwischen den Eingangsvariablen (Inputs) und dem Ziel (Immobilienpreis) zu modellieren. Hier ist die Wichtigkeit einer Variable klar über den Zusammenhang zwischen den Regressionskoeffizienten und deren Signifikanz gegeben.\\ Wird beispielsweise beim maschinellen Lernen ein NN angewandt, können auch nicht lineare Zusammenhänge zwischen den Variablen gefunden werden. In einem NN werden viele Parameter in sogenannten Nodes in ''Hidden Layers'', zwischen den Inputs und Outputs, erstellt und verarbeitet. Im Gegensatz zu einem additiven linearen Modell, in diesem Fall mit den drei Variablen, könnte das NN mehrere verborgene Schichten besitzen, wo jede einzelne mehr Parameter besitzt als die Anzahl der Inputs, was die Interpretierbarkeit erschwert. Explainable AI (XAI), d.h. erklärbare Künstliche Intelligenz, beschreibt einen Teilbereich der KI, welcher sich darauf konzentriert, das Vertrauen von Anwendern, durch das Offenlegen des Entscheidungsprozesses, zu gewinnen. Das Offenlegen ist wichtig, weil, anders als im klassischen linearen Modell, der Weg zum Ergebnis nicht durch ein vorgegebenes Modell klar definiert ist. Der durch den Algorithmus gefundene Weg muss im Nachhinein erklärt werden, um das Ergebnis begründen zu können. Um dies zu ermöglichen, wird bei XAI in manchen Fällen eine geringere Vorhersagegenauigkeit toleriert.\\
+In dieser Arbeit werden verschiedene Analyse- und Visualisierungsmethoden der XAI dargestellt, die diese Interpretierbarkeit ausnutzen, um den Einfluss von Variablen auf den Output zu bewerten. Ziel dieser Arbeit ist es, unterschiedliche Methoden der Analyse und Visualisierung von Explainable AI zu beschreiben. Aus diesen Methoden werden jene ausgewählt, welche im produzierenden Bereich und in der praktischen Anwendung relevant sind. Diese Relevanz baut darauf auf, wie verständlich die resultierende Analyse und Visualisierung für einen Anwender mit beschränktem statistischen Vorwissen ist. Die zugrundeliegenden Kriterien sind Erklärbarkeit, Visualisierungsmöglichkeit und Sinnhaftigkeit für den Anwendungszweck. Als Ergebnis der Evaluierung werden vielversprechende Methoden ausgewählt und in einem praktischen Beispiel auf einen Produktionsdatensatz angewandt. 
+
+%Im Zuge des Projekts ''Voestat+'' der TT (Techniksteuerung, Voestalpine Stahl GmbH) werden die %Evaluierungskriterien nach den Bedürfnissen des Kunden BTQ (Qualitätslenkung im Bereich Bramme, %Voestalpine Stahl GmbH) erhoben. 
+
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\pagebreak
+%\chapter{Übersicht Explainable AI}
+%Erhebung des aktuellen Stands in Explainable AI
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{VOESTat+} \label{voestat}
+Damit die Methoden, welche in Kapitel \ref{methods} eingeführt werden, bezüglich ihrer Anwendbarkeit im Tool VOESTat+ bewertet werden können, wird ein Verständnis vom Tool selbst, sowie von den Vorteilen und Nachteilen der Methoden benötigt. Um dies zu erreichen, werden zuerst die Anforderungen von VOESTat+ betrachtet.
+
+\section{Was ist VOESTat+?}
+VOESTat wurde Mitte der 2000er Jahre entwickelt, um Fachbereiche der Voestalpine, wie Forschung, Qualitätsmanagement sowie den Betriebsingenieuren im produzierenden Bereich bei der Auswertung der, durch die vorangetriebene Digitalisierung des Konzerns, immer häufiger anfallenden Produktionsdatensätze zu unterstützen. Dies geschieht in der aktuell eingesetzten alten Version vorrangig über Methoden, welche zur damaligen Zeit, während der Entwicklung, im betrieblichen Rahmen einsetzbar waren. Es werden vorrangig Korrelationskoeffizienten und Distanzmaße berechnet, sowie eine explorative Analyse der eingelesenen Produktionsdatensätze durchgeführt. Diese Datensätze liegen großteils in tabellarischer Form vor.\\ \\
+Das in dieser Arbeit behandelte VOESTat+ ist eine Neuentwicklung des Konzepts, welches aufgrund technischer Umstände notwendig wurde. Somit wurde im Rahmen eines Ferialpraktikums in der Abteilung Techniksteuerung (TT S - Data Science) eine interne Machbarkeitsstudie mit dazugehörigem Prototypen in R, mit dem Shiny-Package zur visuellen Aufarbeitung, durchgeführt. Nachdem die Bewertung der Machbarkeitsstudie positiv ausgefallen war, wurde im November mit der Neuentwicklung begonnen.\\
+Bei der Neuentwicklung wurde auf folgendes Wert gelegt:
+\begin{itemize}
+    \item Auf der Softwareseite, die Implementation eines neuen Rechenkerns, welcher sich dem neuen Entwicklungsstand im Bereich des maschinellen Lernens bedienen sollte. In der Umsetzung bedeutet dies, dass ein neuer leistungsfähigerer Rechenkern entwickelt und implementiert wurde, welcher ein  Gradient-Boosting-Verfahren verwendet, um die Berechnungen durchzuführen. Dieses Verfahren ist mit der Open-Source-Softwarebibliothek XGBoost (eXtreme Gradient Boosting, siehe \cite{Rxgboost}) für R implementiert. Die Entscheidung für diese Methode sowie eine erste Version des Rechenkerns wurden im Rahmen der Diplomarbeit ''Explainable Artificial Intelligence Methods for Modeling Categorical Responses'' von Marcus Mayrhofer erarbeitet.
+    \item Weiters sollten Methoden implementiert werden, um den leistungsfähigeren, aber gleichzeitig auch komplexeren Rechenkern inklusive der Ergebnisse interpretierbar zu halten. Dies war in der alten Version nicht notwendig, weil die angewandten Methoden durch ihren einfachen Aufbau ohne Weiteres interpretierbar sind.
+    \item Auf der Anwenderseite wurde, in enger Zusammenarbeit mit der Qualitätslenkung im Stahlwerk (Voestalpine Stahl GmbH), die Anwendbarkeit verschiedenster Methoden und vorrangig deren Visualisierung im Bereich XAI erarbeitet. Dies ist notwendig, um die technologische Umsetzbarkeit mit den Rahmenbedingung der praktischen Anwendung abzugleichen.
+\end{itemize}
+
+\section{Wie funktioniert VOESTat+}
+Um die Anforderungen für die Methoden besser zu verstehen, ist ein Verständnis der Funktionsweise von VOESTat+ essentiell.
+\subsection{Ablauf für den Benutzer}
+VOESTat+ funktioniert über ein lokal ausführbares R-Programm, welches mit dem Shiny Paket einen lokalen Server initialisiert. Auf diesen Server kann über einen Browser zugegriffen werden. Dort liest der Benutzer die gewünschten Produktionsdaten ein und kann eine rudimentäre explorative Datenanalyse, mit Quartilen sowie Verteilungen, durchführen. Für die Nutzung der eigentlichen Kernfunktion von VOESTat+, welche das Analysieren eines Modells des Rechenkerns mit den XAI-Methoden ist, muss die Zielvariable sowie eine Kombination aus den in dem ausgewählten Datensatz enthaltenen Methoden gewählt werden. Danach werden die Daten von VOESTat+ gesäubert und in eine Form gebracht, welche der Rechenkern verarbeiten kann.
+
+
+
+\section{Der Rechenkern - XGBoost (Extreme Gradient Boosting)}
+Der Rechenkern ist das Herzstück des Tools, welches die geschätzten Vorhersagen für das Verarbeiten in den beschriebenen XAI-Methoden liefert. XGBoost wurde aufbauend auf der Arbeit von \cite{mayrhofer2021explainable}, in welcher das Konzept erprobt wurde, ausgewählt.\\ \\
+XGBoost, von \cite{chen2016xgboost} eingeführt,  ist ein Ensemble-Lernalgorithmus, der auf dem Prinzip des Gradienten-Boosting basiert. Der Algorithmus baut sequentiell schwache Lerner (typischerweise Regressionsbäume) auf, um ein Vorhersagemodell zu erstellen. Diese schwachen Lerner sind, wie in \cite{schapire1990strength} beschrieben, einzeln nur leicht besser als zufälliges Raten. Das bedeutet, dass iterativ Regressionsbäume erstellt werden, welche jeweils aufbauend auf den vorangegangenen Baum versuchen, dessen Fehler vorherzusagen und zu korrigieren.
+
+\subsection{Einfacher Ablauf} \label{xgboostEinfacherAblauf}
+Wie schon in der Einleitung angesprochen, baut XGBoost auf einem einfachen Modell auf, welches über eine gewisse Anzahl an Iterationen eine Optimierung der Schätzung erzielt. Dies geschieht wie folgt:
+\begin{itemize}
+    \item In der ersten Iteration wird ein einfaches Modell erstellt, im Falle von XGBoost ein Regressionsbaum. Dieser liefert Vorhersagen unter der Verwendung der Trainingsdaten.
+    \item Mit dem ersten Modell werden die Vorhersagefehler berechnet, welche als Grundlage für den nächsten Baum dienen.
+    \item Ein neuer Regressionsbaum wird erstellt, um die Vorhersagefehler des alten Entscheidungsbaums vorherzusagen und zu korrigieren.
+    \item Dieser Ablauf wird nun bis zum Erreichen eines gewünschten Endpunkts wiederholt. Dieser Endpunkt ist entweder eine vordefinierte Anzahl an Iterationen oder ein Schwellenwert an extra Genauigkeit (engl. accuracy) pro Durchlauf, wobei jeder neue Baum erstellt wird, um die Fehler des vorherigen Baums zu korrigieren. Dieser Schritt ist der "Boosting“-Teil.
+    \item Wenn die gewünschte Schlussbedingung erreicht ist, werden die Vorhersagen aller Bäume addiert, um die finalisierten Vorhersagen zu generieren.
+\end{itemize}
+
+Um den Ablauf besser zu verstehen, wird in den kommenden Kapiteln genauer auf die wichtigsten Teilkomponenten eingegangen. Dies ist wichtig, um das Zusammenspiel von den Erklärungsmethoden (XAI) und den Modellen (AI) zu verstehen. Dieser Teil baut auf der Ursprungsarbeit von \cite{chen2016xgboost} auf.
+
+\subsection{Grundlegende Vorhersagefunktion} \label{xgboostGrundlegendeVorhersagefunktion}
+Die Trainingsdaten, für das Modell sind wie folgt definiert:
+\begin{equation}
+    \mathcal{D}=\left\{\left(\mathbf{x}_i, y_i\right)\right\}\left(|\mathcal{D}|=n, \mathbf{x}_i \in \mathbb{R}^m, y_i \in \mathbb{R}\right),
+\end{equation}
+Aus der Definition ist ersichtlich, dass es sich bei $x_i \in R^m$ um eine $n \times m$ Matrix handelt, in welcher $n$ Beobachtungen mit jeweils $m$ Variablen enthalten sind.\\
+
+Für ein vollständiges Verständnis wird die Funktion der Vorhersagen selbst charakterisiert als
+\begin{equation}
+    \hat{y}_i = \phi(\mathbf{x_i}) = \sum_{i=1}^K f_k(\mathbf{x_i}), \quad f_k \in \mathcal{F}
+\end{equation}
+wobei die Vorhersage $\phi$ als Summe (Ensemble) der einzelnen Regressionsbäume, für eine gewisse Beobachtung $\mathbf{x_i}$ zu verstehen ist. Diese Bäume sind in der Menge  
+\begin{equation}
+\mathcal{F}=\left\{f(\mathbf{x})=w_{q(\mathbf{x})} ~|~ q: \mathbb{R}^m \rightarrow T, w \in \mathbb{R}^T\right\}
+\end{equation}
+definiert, hier ist
+\begin{itemize}
+    \item $q$ ist die Struktur, welche jedem Eingabevektor den Index des Blattes zuweist, auf dem er im Baum landet.
+    \item $T$ ist die Anzahl der Blätter im Baum.
+    \item $w_i$ ist das Gewicht, welches einem Wert auf einem $i$-ten Blatt im Regressionsbaum zugeordnet wird.
+\end{itemize}
+Wodurch jedes einfache Modell $f_k$ als Regressionsbaum mit Baumstruktur $q$ und Blattgewichten $w_q$ dargestellt werden kann. Für eine gegebene Beobachtung, möglicherweise Testdaten oder Produktionsdaten, werden die Entscheidungsregeln $q$ in den Bäumen verwendet, um die Beobachtung den Blättern zuzuordnen und die endgültige Vorhersage zu berechnen, indem Werte in den entsprechenden Blättern $w$ summiert werden.
+
+
+
+											
+
+
+\subsection{Zielfunktion}
+
+Die Zielfunktion, welche im Kern eine Optimierungsfunktion ist, besteht aus zwei Teilen: der Verlustfunktion und dem Regularisierungsterm.\\
+
+Die Funktion $\mathcal{L}(\phi)$ minimiert die Summe aus den beiden Termen, d.h.
+
+\begin{equation}
+\mathcal{L}(\phi) = \sum_{i=1}^n l(y_i, \hat{y}_i) + \sum_{k=1}^K \Omega(f_k)
+\end{equation}
+
+mit
+\begin{itemize}
+    \item $l(y_i, \hat{y}_i)$ als Verlustfunktion, die den Abstand zwischen der Vorhersage $\hat{y}_i$ und dem beobachteten Wert $y_i$ misst,
+    \item $\Omega(f_k)$ als Regularisierungsterm des $k$-ten Baum,
+    \item $n$ als Anzahl der Beobachtungen und
+    \item $K$ als Anzahl der Bäume.
+\end{itemize}
+
+\subsection{Regularisierungsterm}
+
+Der Regularisierungsterm wird charakterisiert als:
+
+\begin{equation}
+\Omega(f) = \gamma T + \frac{1}{2}\lambda ||w||^2
+\end{equation}
+
+wobei:
+\begin{itemize}
+    \item $T$ die Anzahl der Blätter im Baum ist
+    \item $w$ ist der Vektor der Gewichte
+    \item $\gamma$ und $\lambda$ sind Regularisierungsparameter
+\end{itemize}
+Hier ist für die Verständlichkeit anzumerken, dass $||w||^2 = \sum_{j=1}^T w_j^2$ die Summe der quadrierten Gewichte ist.
+
+\subsection{Gradient Tree Boosting}
+Wie in Kapitel \ref{xgboostGrundlegendeVorhersagefunktion} schon angemerkt, ist der Algorithmus von XGBoost mit dem Gradient Tree Boosting iterativ aufgebaut. Dies ist notwendig, wie in \cite{chen2016xgboost} beschrieben, weil die Parameter des Modells zum Teil als Funktionen auftreten und somit nicht mit herkömmlichen Optimierungsverfahren geschätzt werden können. Jedoch ist es möglich, eine Menge an Regressionsbäumen additiv zu optimieren, dies führt zur iterativen Struktur des Modells.
+
+Wie in Kapitel \ref{xgboostEinfacherAblauf} beschrieben, werden in XGBoost Regressionsbäume verwendet, um iterativ das Modell zu optimieren. Um diese schwachen Lerner zu bestimmen, wird Gradient Boosting, genauer Gradient Tree Boosting, angewandt.\\
+
+Ausgehend von der in Kapitel \ref{xgboostGrundlegendeVorhersagefunktion} beschriebenen Funktion, charakterisiert sich die Vorhersage $\hat{y}_i^{(t)}$ für die $i$-te Beobachtung in der $t$-ten Iteration als:
+\begin{equation}
+\hat{y}_i^{(t)} = \sum_{k=1}^t f_k(\mathbf{x_i}) = \hat{y}_i^{(t-1)} + f_t(\mathbf{x}_i)
+\end{equation}
+
+Um $\hat{y}_i$ der $t$-ten Iteration zu bestimmen, wird zum $\hat{y}_i$ Wert in der $t-1$-ten Iteration, der Regressionsbaum addiert, welcher die Zielfunktion minimiert.\\
+
+Mit dem Regressionsbaum $f_t(x_i)$ wird die Zielfunktion charakterisiert als:
+
+\begin{equation}
+\mathcal{L}(\phi) = \sum_{i=1}^n l(y_i, \hat{y}_i^{(t-1)} + f_t(\mathbf{x}_i)) + \Omega(f_t)
+\end{equation}
+
+Dies zeigt, dass jener Regressionsbaum hinzugefügt wird, welcher die Zielfunktion nach der $t$-ten Iteration minimiert.\\
+
+
+Um den Rechenaufwand so klein wie möglich zu halten, verwendet XGBoost eine Taylor-Approximation zweiter Ordnung der Zielfunktion:\\
+
+Diese Approximation ist gegeben als:
+\begin{equation}
+\mathcal{L}^{(t)} \approx \sum_{i=1}^n [l(y_i, \hat{y}_i^{(t-1)}) + g_i f_t(\mathbf{x}_i) + \frac{1}{2}h_i f_t^2(\mathbf{x}_i)] + \Omega(f_t)
+\end{equation}
+
+wobei:
+\begin{itemize}
+    \item $g_i = \frac{\partial l(y_i, \hat{y}_i^{(t-1)})}{\partial \hat{y}_i^{(t-1)}}$ der Gradient erster Ordnung ist
+    \item $h_i = \frac{\partial^2 l(y_i, \hat{y}_i^{(t-1)})}{\partial (\hat{y}_i^{(t-1)})^2}$ der Gradient zweiter Ordnung ist
+\end{itemize}
+
+Durch Streichung des konstanten Terms $l(y_i, \hat{y}_i^{(t-1)})$ kann die Zielfunktion in der $t$-ten Iteration vereinfacht werden zu:
+\begin{equation} \label{xgboostEqAprox3}
+\Tilde{\mathcal{L}}^{(t)} = \sum_{i=1}^n [g_i f_t(\mathbf{x}_i) + \frac{1}{2}h_i f_t^2(\mathbf{x}_i)] + \Omega(f_t)
+\end{equation}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%muss noch umgeschrieben werden 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Optimale Gewichte für eine gegebene Struktur}
+
+Aus der vorrangegangen Gleichung (\ref{xgboostEqAprox3}) lässt sich die optimale Gewichtung für die nächste Iteration bestimmen. Die optimalen Gewichte $w_j^*$ bei gegebener Baumstruktur $q(x)$, in der eine Beobachtung $x$ einem Blatt $j$ zugeordnet ist, sind:
+
+\begin{equation}
+w_j^* = -\frac{\sum_{i \in I_j} g_i}{\sum_{i \in I_j} h_i + \lambda}
+\end{equation}
+
+wobei $I_j = \{i | q(x_i) = j\}$ die Menge der Beobachtungen im Blatt $j$ ist.
+
+%\subsection{Gewinn beim Splitten}
+%
+%Der Gewinn beim Splitten eines Blattes in zwei neue Blätter wird berechnet als:
+
+%\begin{equation}
+%\text{Gain} = \frac{1}{2} \left[ \frac{(\sum_{i \in I_L} g_i)^2}{\sum_{i \in I_L} h_i + \lambda} + \frac{(\sum_{i %\in I_R} g_i)^2}{\sum_{i \in I_R} h_i + \lambda} - \frac{(\sum_{i \in I} g_i)^2}{\sum_{i \in I} h_i + \lambda} %\right] - \gamma
+%\end{equation}
+
+%wobei $I_L$ und $I_R$ die Indizes der linken und rechten Teilmengen nach dem Split sind.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+\chapter{Beschreibung der Methoden} \label{methods}
+
+
+%\section{Übersicht}
+%Vorläufig werden die Methoden aus unterschiedlichen Gruppen untersucht diese können Feature basiert sein wie SHAP und LIME, Rule basierten, wie den Anchors, sowie die Propagation basierten Methoden wie LRP (Layer-Wise Relevance Propagation) und CAM hier aber vielleicht eher Grad-CAM.\\
+%Die Gruppen:\\
+%Feature basiert: \\
+%Bei Feature basierten Methoden wird versucht den Einfluss der einzelnen Variablen auf das Modell und deren Schätzungen zu quantifizieren. Hierfür werden im Falle von LIME sogenannte Surrogate Modelle verwendet diese sind meist lineare Modelle, es gibt auch Weiterentwicklungen wie ExplainExplore welche ''shallow tree models'' verwenden, also flache Entscheidungsbäume, um die Genauigkeit des Surrogate Modells zu verbessern. Die zweite ''große'' Methode im Bereich der Feature basierten Analysemethoden ist SHAP, dieses wird auch in der aktuellen Version von Voestat+ zur Darstellung der Feature-Importance verwendet.
+%Rule basiert:\\
+%Regelbasierte Erklärungen sind eine häufig genutzte Methode in vXAI, die Vorhersagen mithilfe von IF...THEN...ELSE-Logik erläutert. RuleMatrix visualisiert diese Regeln in Form einer Matrix, während xDNN Prototyp-basierte Erklärungen für neuronale Netze anbietet. Model Diagnostics und ModelSpeX setzen auf Regel-Extraktion, um lokale und Gruppen-Erklärungen für Klassifikatoren bereitzustellen, ohne IF-THEN-Regeln zu visualisieren.
+%Propagation basiert:\\
+%XAI-Methoden wie LRP, CAM und Grad-CAM nutzen Rückwärts-Propagation, um Vorhersagen zurückzuverfolgen und dadurch sowohl auf globaler als auch auf lokaler Ebene die Relevanz von Merkmalen zu erklären. Lauritsen verwendeten LRP, um die Merkmalswichtigkeit auf Instanzen- und Bevölkerungsebene bei akuten kritischen Krankheitsdaten aufzuzeigen. Saliency-Karten werden oft eingesetzt, um die Beiträge von Merkmalen für jede Probe hervorzuheben. Li verwendeten sie, um den Beitrag und die negativen Auswirkungen von Wörtern in LSTM-Modellen zu erklären. Die CAM- und Grad-CAM-Methoden verbessern die Saliency. \\
+%Die meisten VA-Forschungen integrieren nur eine bestimmte Art von XAI-Methode in ihre Systeme. Da es viele XAI-Techniken gibt, ist es schwierig, jede einzeln zu implementieren und ihre Erklärbarkeit zu vergleichen. Um dieses Problem zu lösen, wurde iNNvestigate ein Python-Paket, entwickelt, das nicht nur XAI-Methoden, sondern auch neuronale Netzwerke (NN) vergleicht. iNNvestigate ermöglicht es, verschiedene NN-Modelle auf der gleichen Instanz zu vergleichen und Merkmalsbeiträge mit einer benutzerdefinierten XAI-Methode zu visualisieren. Das Paket unterstützt eine Vielzahl von propagation-basierten XAI-Methoden, wie Saliency Maps, Integrated Gradient und LRP.
+%Ähnlich unterstützen verschiedene propagation- und featurebasierte XAI-Methoden wie LIME, LRP, SHAP, Saliency Maps und DeepLIFT. Diese Tools bieten sowohl lokale als auch globale Erklärungen für individuelle und Untergruppen-Instanzen.
+%\newpage
+
+
+Die folgenden Betrachtungen einzelner Methoden bauen auf \cite{molnar2020interpretable} ''Interpretable Machine Learning A Guide for Making Black Box Models Explainable'' auf. 
+\section{LIME} \label{lime}
+Das Konzept von Local Interpretable Model-agnostic Explanations (LIME), in Deutsch: lokale interpretierbare modellagnostische Erklärungen, wurde von  Ribeiro et al. (2016) eingeführt. LIME ist ein Surrogatmodell. Surrogat wird im Duden als ''Stoff, Mittel o. Ä. als behelfsmäßiger, nicht vollwertiger Ersatz'' erklärt, siehe \cite{duden}.
+Diese Bezeichnung beschreibt LIME sehr gut, da es dazu verwendet wird, das Ergebnis eines komplexen Modells (Black Box) durch ein weniger komplexes und leichter interpretierbares Modell zu erklären.
+
+
+
+
+
+\subsection{Idee von LIME}
+Wie schon in der Einführung behandelt, werden Datensätze und die darauf angewendeten Modelle immer größer und komplexer. Somit werden auch die Rechenleistungsanforderungen bei Methoden steigen, 
+welche versuchen diese in ihrer Gesamtheit zu erklären. Im Gegensatz dazu versucht LIME, ein einzelnes Ergebnis eines komplexen Modells durch das Betrachten eines kleineren ''lokalen'' Ausschnitts der Daten, mithilfe eines linearen Modells interpretierbarer zu erklären.\\
+\begin{figure}[h]
+\centering
+\includegraphics[]{Lime1.png}
+\caption{Von der globalen zur lokalen Betrachtungsweise}
+\label{fig:globaltolocal}
+\end{figure}\\
+
+Wie in der untenstehenden Grafik \ref{fig:globaltolocal} veranschaulicht, können auf globaler Ebene die Erklärungen für Ergebnisse eines Modells komplex sein. Bei einer Reduzierung auf einen kleineren Bereich ist die Trennung jedoch viel leichter erkennbar und somit die Erklärung auch interpretierbarer. %Dies folgt dem selben Schema wie die Steigerung von Größe der Datensätze und Komplexität von Modellen.
+\newpage
+\subsection{Theoretische Grundlage}
+In Ribeiro et al. (2016) wird eine Klasse $G$ eingeführt, welche die Menge an interpretierbaren Modellen darstellt. Diese können zum Beispiel lineare Modelle sowie Entscheidungsbäume sein. Im Paper wird $G$ als Menge linearer Modelle angenommen, somit wird auch in dieser Arbeit $G$, im Kapitel \ref{lime}, als solche angenommen. Beim Einführen der grundlegenden Formel weisen Ribeiro et al. (2016) auch direkt auf die grundlegende Problematik hin. Diese ist der ''Fidelity-Interpretability Trade-off'', in Deutsch der Treue-Interpretierbarkeit-Konflikt. Dieser bezieht sich auf die Notwendigkeit, das erklärende Modell interpretierbar zu halten, ohne lokale Treue zu verlieren.\\
+Für die Formel von LIME wird Folgendes benötigt:
+\begin{itemize}
+    \item $\xi(x)$: Das lineare Erklärungsmodell, welches die Vorhersage für die Beobachtung x approximiert.
+    \item $g$: Ein Modell aus der Menge der möglichen Erklärungsmodelle $G$.
+    \item $f$: Das ursprüngliche komplexe Modell, von welchem das Ergebnis erklärt werden soll.
+    \item $\pi_x$: Die Distanzfunktion, welches die Abweichung der Stichprobenelemente zum ursprünglichen Datenpunkt $x$ misst.
+    \item $\mathcal{L}(f, g, \pi_x)$: Die Verlustfunktion beschreibt, wie genau das Erklärmodell $g$ das Verhalten des komplexen Modells $f$ in Abhängigkeit von $\pi_x$, approximiert.
+    \item $\Omega(g)$: Der Regularisierungsterm, welcher die Komplexität von $g$ misst.
+\end{itemize}
+
+\begin{equation} \label{limeformel}
+\xi(x)=\underset{g \in G}{\operatorname{argmin}} \left[ \mathcal{L}\left(f, g, \pi_x\right)+\Omega(g)\right]
+\end{equation}
+
+Das gewählte lineare Modell $g$ ist jenes aus der Menge $G$, welches den Verlust der Treue $\mathcal{L}(f, g, \pi_x)$ plus die Pönalisierung $\Omega(g)$ für komplexere Modelle minimiert.
+
+%möglicherweiße erklärung von L und pix und dem algorithmus 1 aus Ribeiro et al. (2016)
+
+
+
+\newpage
+\section{Shapley} \label{shapley}
+Das grundlegende Konzept der Shapley-Werte baut auf der kooperativen Spieltheorie, welche von Lloyd Shapley 1951 entwickelt wurde, auf. Aufgrund ihres Beitrags zur Lösung von Gewinnverteilung wurde er 2012 mit dem Nobelpreis in Wirtschaftswissenschaften ausgezeichnet. Die Shapley-Werte bieten eine mathematisch fundierte Möglichkeit, den Beitrag einzelner Variablen zu einem Gesamtergebnis zu quantifizieren. Hier werden sie verwendet, um Entscheidungen des maschinellen Lernens zu erklären.
+
+\subsection{Theoretische Grundlage}
+Der initiale Gedanke der kooperativen Spieltheorie ist es, wenn eine Gruppe von Spielern zu einem gemeinsamen Erfolg beitragen, diese auch gerecht für ihren Beitrag zu entlohnen. Im Kontext von Künstlicher Intelligenz ist das Ergebnis eines Modells, der Erfolg und der Beitrag der Spieler gleichzusetzen mit der Stärke des Einflusses der einzelnen Parameter auf das Ergebnis. Somit wird der Shapley-Wert $\phi_i(v)$, der marginale Beitrag eines Features für alle Beobachtungen in einem Datensatz, berechnet über die folgende Formel
+
+\begin{equation} \label{shapleyformel}
+\phi_i(v)= \sum_{S \subseteq N \backslash\{i\}} \frac{|S|!(n-|S|-1)!}{n!}(v(S \cup\{i\})-v(S))
+\end{equation}
+
+Dabei ist:
+\begin{itemize}
+    \item \textbf{\( v \)}: Nutzenfunktion die den Gesamtwert einer Koalition beschreibt.
+    \item \textbf{\( N \)}: Menge aller Spieler.
+    \item \textbf{\( n \)}: Gesamtzahl der Spieler in \( N \).
+    \item \textbf{\( S \)}: Eine Teilmenge von allen Spieler ohne den interessierenden Spieler.
+    \item \textbf{\( |S| \)}: Anzahl der Spieler in der Koalition \( S \).
+\end{itemize}
+
+
+Hierbei wird der Anteil eines Spielers am Ergebnis berechnet durch der Differenz der Nutzenfunktion der Teilmenge an Spielern mit dem interessierenden Spieler $i$ $v(S \cup\{i\})$ und der Nutzenfunktion ohne den interessierenden Spieler v(S). Diese Differenz wird anschließend gewichtet.
+%Zum einen der Fakultät der Kardinalität von \textbf{\( S \)} diese wird multipliziert mit der Fakultät des %Ergebnisses aus der Gesamtzahl der Spieler \textbf{\( n \)} minus der Kardinalität von \textbf{\( S \)} minus %$1$. Nun wird dies noch durch \textbf{\( n \)} dividiert.\\
+Um nun den Shapley-Wert für einen Spieler zu erhalten, werden die beiden Terme für jede Kombination an Spielern $S \subseteq N \backslash\{i\}$ multipliziert und dann summiert. 
+
+%hier muss noch mehr erklärt werden 
+%Die Nutzenfunktion selbst ist definiert als
+%\begin{equation}
+%v_x(S)= \int \hat{f}(x_1, \ldots, x_p) \, dP_{x \notin S} - \mathbb{E}_X(\hat{f}(X)).
+%\end{equation}
+
+\subsection{Axiome} \label{shapleyaxiom}
+Ein weiterer Aspekt der Shapley-Werte ist deren Erfüllung von Axiomen, die eine solide Grundlage dafür bieten, dass die Erklärungen der Methode korrekt sind.\\
+Diese sind Effizienz, Dummy-Kondition sowie Symmetrie und Additivität. Die Charakterisierungen der unten behandelten Axiome wurden von \cite{molnar2020interpretable} entnommen. \\ \\
+
+Effizienz: Das Kriterium der Effizienz besagt, dass die Summe der Shapley-Werte exakt die Differenz zwischen der Modellvorhersage und dem durchschnittlich erwarteten Wert erklärt. Dies zeigt sich in der folgenden Gleichung \ref{Shapley-Effizienz}
+
+\begin{equation} \label{Shapley-Effizienz}
+\sum_{i=1}^p \phi_i = \hat{f}(x) - \mathbb{E}_X(\hat{f}(X))
+\end{equation}
+
+Aus dieser Gleichung ist ersichtlich dass die summierten Shapley-Werte die Differenz zwischen Vorhersage $\hat{f}(x)$ und Erwartung $\mathbb{E}_X(\hat{f}(X))$ ergeben.\\ \\
+
+Symmetrie: Das Kriterium der Symmetrie besagt, dass zwei Variablen / Spieler, welche denselben Einfluss auf die Vorhersage ausüben, für jede mögliche Kombination $S$ an Variablen, exklusive der zwei interessierenden Variablen, denselben Shapley-Wert besitzen. Dies zeigt sich durch das Gleichsetzen der Nutzenfunktionen $v$ für die Koalitionen kombiniert mit jeweils einer der beiden Variablen:
+
+\begin{equation}
+v(S \cup \{j\}) = v(S \cup \{k\})
+\end{equation}
+
+Dies gilt, wie angemerkt, für jede Koalition an Spielern aus der Menge der Spieler ohne die zwei interessierenden Spielern
+
+\begin{equation}
+S \subseteq \{1,\ldots,p\} \setminus \{j,k\}
+\end{equation}
+
+Daraus folgt nach dem Axiom der Symmetrie, dass durch den gleichen Einfluss auf die Vorhersage des Modells infolge auch die Shapley-Werte der beiden Variablen gleich sind.
+
+\begin{equation}
+\phi_j = \phi_k
+\end{equation}
+
+Dummy-Kondition: Das Kriterium der Dummy-Kondition besagt, dass eine Variable, welche keinen Einfluss auf die Vorhersage des Modells hat, auch einen Shapley-Wert von 0 hat, unabhängig davon, in welcher Koalition von Spielern sie auftritt. \\
+Das bedeutet, dass das Ergebnis der Nutzenfunktionen für eine Koalition $S$ unabhängig von der Variable, die keinen Einfluss hat, ist. Somit gilt:
+
+\begin{equation} \label{Shapley-Dummy}
+v(S \cup \{j\}) = v(S),
+\end{equation}
+
+wenn dies für alle möglichen Koalitionen von Spielern $S$ aus der Menge aller Spieler 
+
+\begin{equation}
+S \subseteq \{1,\ldots,p\}
+\end{equation}
+gilt. Dann folgt laut dem Axiom der Dummy-Kondition, dass der Shapley-Wert für eine Variable ohne Einfluss auf die Vorhersage des Modells $0$ ist, d.h. $\phi_j = 0$.
+
+
+\newpage
+Additivität: Das Kriterium der Additivität besagt, dass für die Vorhersage eines Modells, dessen Vorhersage die Kombination aus mehreren Vorhersagen ist, oder einfacher, dass für ein Spiel, dessen Auszahlung die Summe von zwei Spielen ist, die Shapley-Werte ebenfalls die Summe der jeweiligen Shapley-Werte aus den Einzelspielen bilden.\\
+Das bedeutet, dass die Nutzenfunktion des kombinierten Spiels durch die Summe der Nutzenfunktionen der beiden Einzelspiele gegeben ist. Daraus folgt, wenn
+
+\begin{equation}
+v_{\text{combined}}(S) = v(S) + v^+(S)
+\end{equation}
+
+gilt, dann ergibt sich der Shapley-Wert eines Spielers im kombinierten Spiel als die Summe der Shapley-Werte aus den beiden Einzelspielen:
+
+\begin{equation}
+\phi_j(v_{\text{combined}}) = \phi_j(v) + \phi_j(v^+)
+\end{equation}
+
+Dies bedeutet, dass der Beitrag eines Spielers in einem kombinierten Spiel gleich der Summe seiner Beiträge zu den einzelnen Spielen ist.
+
+
+
+
+\subsection{Einführendes Anwendungsbeispiel}
+Beispielshalber ist die Frage der Kreditwürdigkeit einer Person im Bankenwesen ein häufiges Problem.
+
+Wenn ein Modell des maschinellem Lernens, welches als Unterstützung bei der Risikobewertung verwendet wird, besteht Erklärungsbedarf. Hier könnten Shapley-Werte Abhilfe schaffen. Das Ergebnis wird, zum Beispiel, durch zwei Parameter beeinflusst: dem Einkommen der Person und der existierenden Schuldenlast. Wenn nun der Shapley-Wert für das Einkommen positiv und der für die Schuldenlast negativ ist, bietet dies einen Einblick in die Entscheidungsfindung des Modells. Das heißt, für eine Kreditwürdigkeit zwischen 0 (nicht kreditwürdig) und 1 (voll kreditwürdig) würde das Einkommen in diesem Beispiel die Kreditwürdigkeit erhöhen und die Schuldenlast würde sie verringern.
+%Im Kontext von Maschinellem Lernen, können Beiträge zum Ergebnis eines Modells für jeden Parameter klar %berechnet werden, jedoch kann
+
+
+
+\newpage
+\section{SHAP}
+Die SHAP (SHapley Additive exPlanations) Methode verbindet die Ansätze von LIME und Shapley-Werten, indem es die Shapley-Werte verwendet, um eine lokale Erklärung für jede Beobachtung zu erzeugen. Das SHAP-Framework wurde im Paper Lundberg and Lee (2017) eingeführt, mit der Neuerung, dass die Shapley-Werte als additive Einflusswerte für eine Erklärung verwendet werden.
+
+\subsection*{Theoretische Grundlage}
+Um eine Beobachtung $x$ mit Shapley-Werten additiv erklären zu können, werden diese ähnlich zu LIME als linearer Prädiktor für eine Vorhersage angesehen. Dieses Konzept wird in der Formel von Lundberg and Lee (2017) ersichtlich, hierfür werden von ihnen eingeführt:
+\begin{itemize}
+    \item $z'_j$: Der Koalitionsvektor, welcher definiert ist als $z_j' \in \{0, 1\}^M$.
+    \item $g(z')$: Das lineare Erklärungsmodell, welches die Vorhersage für eine vereinfachte Darstellung eines Datenpunkts abhängig von $z'$ liefert.
+    \item $\phi_0$: Dies kann, analog zu einem linearen Modell, als Intercept verstanden werden, in \cite{molnar2020interpretable} wird es angenommen als $\mathbb{E}_X\left(\hat{f}(x)\right)$.
+    \item $\phi_j$: Der Shapley-Wert, welcher den marginalen Beitrag des $j$-ten Merkmals zum Ergebnis / Erklärung quantifiziert.
+    \item $M$: Die maximale Koalitionsgröße, das heißt, die maximale Anzahl an Parameter, die im Erklärungsmodell vorhanden sind.
+\end{itemize}
+Mit den eingeführten Parametern ergibt sich die Formel
+\begin{equation}
+    g(z') = \phi_0 + \sum_{j=1}^{M} \phi_j z'_j
+\end{equation}
+welche die Additivität von Shapley mit LIME verbindet. Auch ist der $z$ Vektor ein Substitut für einen Datensatz mit binären Variablen, welcher im Falle von SHAP über die Inklusion in das Modell entscheidet. Somit können die unterschiedlichen Koalitionen der Shapley-Werte erzeugt werden.\\
+
+Im Rahmen von VOESTat+ werden 2 Methoden verwendet, die auf SHAP aufbauen:
+\begin{itemize}
+    \item TreeSHAP: Nutzt die Baumstruktur, um die exakten Shapley-Werte für baumbasierte Modelle effizient zu berechnen (\cite{lundberg2018consistent}).
+    \item KernelSHAP: Ist ein modellunabhängiger Ansatz, der Shapley-Werte approximiert, indem er durch gewichtete Stichproben den Einfluss einzelner Merkmale ermittelt (\cite{lundberg2017unified}).
+\end{itemize}
+%\subsection{TreeSHAP} \label{treeShap}
+%\cite{lundberg2018consistent}
+
+
+\newpage
+\section{PDP}
+Die ''Partial Dependence Plots'', in \cite{friedman2001greedy} eingeführt, zeigen den marginalen Beitrag eines Parameters auf das Ergebnis eines Modells. Dabei wird für jeden möglichen Wert des Parameters die durchschnittliche Änderung der Vorhersage ermittelt, wodurch sich der marginale Einfluss des Parameters über seinen gesamten Wertebereich visualisieren lässt.
+
+\subsection*{Theoretische Grundlage}
+Für die Berechnung wird von \cite{friedman2001greedy} folgendes eingeführt:
+\begin{itemize}
+    \item $\hat{f}_S(x_S)$: Die Partial Dependence Funktion, die den erwarteten Wert des ursprünglichen Modells $\hat{f}$ für die Parameter $x_S$ ermittelt.
+    \item $x_S$: Die Menge an Parametern, für welche die bedingte Verteilung ermittelt werden soll.
+    \item $X_C$: Die Menge an komplementären Parametern, auf welche die Funktion bedingt ist.
+    \item $E_{X_C}$: Der Erwartungswert der komplementären Parameter $X_C$, die nicht Teil der interessierenden Parameter $S$ sind.
+    \item $\hat{f}(x_S, X_C)$: Das maschinelle Lernmodell $\hat{f}$, das auf den Merkmalswerten $x_S$ und $X_C$ basiert und die Vorhersage liefert.
+\end{itemize}
+Mit eingeführten Parametern wird die Formel zur Berechnung der PDPs von \cite{friedman2001greedy} als
+\begin{equation}
+    \hat{f}_S(x_S) = E_{X_C}[\hat{f}(x_S, X_C)] = \int \hat{f}(x_S, X_C) p(X_C) dX_C
+\end{equation}
+definiert. Aus der Formel ist $\hat{f_S(X_s)}$ der Wert, der sich durch Marginalisieren über $X_c$ ergibt. Dieser wird im PDP auf der y-Achse als Funktionswert aufgetragen.\\
+
+Bei metrischen Zielwerten ist der Weg zur Berechnung des Ergebnisses klar. Ist die Zielvariable jedoch nominal oder ordinal kodiert, gibt es nicht mehr nur ein Ergebnis, wie für metrische Variablen, sondern es müssen für jede kategorische Ausprägung die Berechnungen einzeln durchgeführt werden. Dafür werden alle Beobachtungen der Zielvariable auf dieselbe Kategorie gesetzt, um den marginalen Anteil der interessierenden Variable über den Wertebereich für eine Kategorie zu ermitteln. \\
+%Wenn dies nun visualisiert wird 
+
+
+
+
+
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+\chapter{Evaluierung der Methoden}
+
+\section{Kriterien}
+In Zusammenarbeit mit dem Projekt VOESTat+ wurden die in Kapitel \ref{methods} betrachteten Methoden implementiert und dann nach ihrer Anwendbarkeit und ihren Vorteilen und Nachteilen evaluiert. 
+Zu diesem Zweck haben sich während der Umsetzung der Neuentwicklung folgende Kriterien herauskristallisiert:
+\begin{itemize}
+    \item Die Verständlichkeit der Methode ist ein wichtiger Punkt, um Vertrauen in den Prozess herzustellen.
+    \item Die Interpretierbarkeit des Outputs hat den stärksten Einfluss auf das Vertrauen in das Modell und dessen Entscheidung. Denn das graphische Benutzerfenster bietet die einzige Möglichkeit für den späteren Anwender, das Ergebnis des Modells und der XAI-Methoden nachzuvollziehen. 
+    \item Die Umsetzbarkeit im Kontext von VOESTat+ ist ein weiterer Faktor, welcher die Entscheidung für oder gegen eine Methode beeinflusst. Diese Umsetzbarkeit teilt sich in die Nutzbarkeit in einem zeitlichen Rahmen, welcher 10 Minuten von der Ausführung des Programms bis zu einem Ergebnis nicht überschreiten sollte, sowie die technischen Rahmenbedingungen, welche durch den Rechenkern mit XGBoost sowie Shiny vorgegeben werden, auf.
+\end{itemize}
+
+\newpage
+\section{LIME} \label{lime-eval}
+LIME (Local Interpretable Model-agnostic Explanations) ist eine Methode, welche durch das Reduzieren auf einen kleinen Ausschnitt der verwendeten Daten versucht, auf lokaler Ebene die Entscheidung eines komplexeren Modells zu approximieren.
+
+\subsection{Vorteile - LIME}
+\begin{itemize}
+    \item Lokalität von LIME: Weil LIME für jede Kombination aus Vorhersage und einzelnem Teildatensatz ein lineares Modell erstellt, kann es unter der Voraussetzung, dass der Benutzer ein Verständnis für die Signifikanz einzelner Variablen in linearen Modellen besitzt, auf einfache Weise eine Approximation des Einflusses von Parametern in einem Modell geben. Auch wenn dies nicht vorhanden ist, kann durch weiteres Verarbeiten des Outputs eine Grafik nach dem System "größer / höherer Wert ist besser'' erstellt werden. Es wird weniger Vorwissen vorausgesetzt.
+    \item Flexibilität und Geschwindigkeit: Durch die Einfachheit der von LIME, zur Approximation, verwendeten Modelle können schnell Einblicke in die getroffene Entscheidung von individuellen Vorhersagen geboten werden.
+\end{itemize}
+
+\subsection{Nachteile - LIME}
+\begin{itemize}
+    \item Rechenintensität für ''globale'' Anwendung: LIME ist bei großen oder hochdimensionalen Datensätzen rechenintensiv , da viele lokale Modelle berechnet werden müssen, wenn eine Analyse auf globaler Ebene gewünscht ist. Wie in Kapitel \ref{voestat} beschrieben, liegt der Fokus von VOESTat+ auf der schnellen und einfachen Aufarbeitung von sehr großen Produktionsdatensätzen.
+    \item Stabilität der Nachbarwahl: Wie in Kapitel \ref{lime} beschrieben, werden die Nachbarn zufällig ausgewählt. Somit kann es zu starken Unterschieden in den Ergebnissen kommen, was die Zuverlässigkeit verringert. Dies ist das Resultat der verwendeten Form der Daten in VOESTat+, welche in tabellarischer Form vorliegen. Somit wird das Distanzmaß $\pi_x$ beeinträchtigt, weil die Daten oft nominal skaliert sind und somit nicht wie in Bildern eine klare Örtlichkeit aufweisen.
+    \item LIME nimmt zumindest auf lokaler Ebene ein lineares Verhalten der Daten an. Wenn dies nicht erfüllt ist, kann dies zu stark unterschiedlichen Ergebnissen bei zwei sehr ähnlichen Punkten führen, wie in \cite{slack2020fooling} gezeigt wurde.
+\end{itemize}
+Somit ist LIME für die Anwendung in der aktuellen Version von VOESTat+ nur bedingt geeignet. Jedoch könnte es in zukünftigen Versionen von VOESTat+, welche um eine detailliertere Analysekomponente des Outputs erweitert werden, implementiert werden.
+Hierfür würde eine Betrachtung der Weiterentwicklung von LIME notwendig. Da LIME sich laut \cite{molnar2020interpretable} noch in der Entwicklung befindet, ist eine potentielle Version, welche sich mit der Lösung des Nachbarschaftsproblems mit tabellarischen Daten befasst, abzuwarten.
+
+\newpage
+\section{Shapley}
+Die Shapley-Werte entspringen der kooperativen Spieltheorie und bieten die Möglichkeit einer fairen Gewinnverteilung basierend auf dem marginalen Beitrag eines Spielers. In vielen Kontexten bietet die faire Zuweisung des Gewinns entscheidende Vorteile.
+
+\subsection{Vorteile - Shapley}
+\begin{itemize}
+    \item Fairness: Die Shapley-Werte bieten die Möglichkeit, den Einfluss unterschiedlicher Parameter eines Modells auf seine Entscheidungen klar zu quantifizieren. Diese mathematische Basis steht im starken Kontrast zur LIME-Methode, mit welcher keine faire Aufteilung garantiert werden kann. Laut \cite{molnar2020interpretable} könnte, zum aktuellen Stand, Shapley die einzige Methode sein, welche eine faire und konstante Zuschreibung des Einflusses von Variablen auf Ergebnisse ermöglicht. Dies basiert auf den vier Axiomen aus Kapitel \ref{shapleyaxiom}.
+    \item Vergleichbare Erklärungen: Es ist möglich, dass Vergleiche unterschiedlichster Vorhersagen miteinander durchgeführt werden können. Oft gibt es nur eine Referenzkategorie, mit der verglichen werden kann. Shapley ermöglicht es, den Rahmen der zu vergleichenden Datensätze und der daraus resultierenden Vorhersagen des Modells frei zu wählen. Dies ist von Vorteil, wenn z. B. nur eine bestimmte Ausprägung der Zielvariable untersucht werden soll.\\
+    Für zukünftige Versionen von VOESTat+ mit einer, wie schon in \ref{lime-eval} beschrieben, detaillierteren Analysekomponente des Outputs wäre diese Fähigkeit der Shapley-Werte eine vielversprechende Entwicklungsrichtung. %Auch durch die Kontinuität mit der aktuellen Version.
+    \item Interpretierbarkeit: Wie verständlich eine XAI-Methode ist, zählt zu den zentralen Herausforderungen der XAI. Im Falle der Shapley-Werte ist dies für das Ergebnis der Methode sehr hoch. Dies ist im Anwendungsfall von VOESTat+ sehr essentiell, denn ein einfacher Wert, welcher leicht zu vergleichen ist, gibt dem Benutzer auch ohne tieferes Verständnis einen Richtwert, welcher Parameter welchen Einfluss auf das Ergebnis des Modells hat.
+\end{itemize}
+
+\subsection{Nachteile - Shapley}
+\begin{itemize}
+    \item Rechenaufwand: Die Berechnung von Shapley-Werten ist besonders für komplexe XGBoost-Modelle mit großen Produktionsdatensätzen sehr aufwendig. Dies resultiert bei der exakten Berechnungsweise aus dem Umstand, dass jede mögliche Koalition berechnet werden muss.
+\end{itemize}
+Somit ist der Shapley-Wert für den Verwendungszweck in VOESTat+ eine Methode mit klaren Vorteilen, erfüllt jedoch nicht die Bedingung der Geschwindigkeit.
+
+
+\newpage
+\section{SHAP}
+Durch das Verbinden von LIME und Shapley-Werten vereint das SHAP Framework von \cite{lundberg2017unified} einige der Vorteile der beiden Methoden. Zudem bringt es Ansätze wie TreeSHAP, welche dezidiert für den Rechenkern, welchen XGBoost verwendet, ein Faktor sein können. 
+\subsection{Vorteile - SHAP}
+\begin{itemize}
+    \item Aufbau auf Shapley-Werten: Durch die Verwendung als Evaluierungsmetrik bedient sich SHAP der Vorteile von Shapley. Dies bedeutet eine faire Bewertung des Einflusses der Parameter auf das Ergebnis des Modells. Auch die Kondition der vergleichbaren Erklärungen wird durch die Verwendung der Shapley-Werte in SHAP möglich.
+    \item Verbindung LIME und SHAP: Durch die Verbindung der beiden Methoden werden lokale wie globale Erklärungen möglich.
+    %\item Tree-SHAP: Mit Tree-SHAP existiert eine Implementierung, welche den generellen Nachteil der exponentiell hohen Berechnungszeit auf ein in VOESTat+ anwendbares Maß reduziert. %Dies wurde in Kapitel \ref{treeShap} betrachtet.
+    \item Globale Erklärungen: Wie in \cite{molnar2020interpretable} beschrieben, erlaubt SHAP globale Erklärungen, welche konsistent mit den lokalen Erklärungen sind, da sie als ''atomare Einheiten" die Shapley-Werte als Bausteine verwenden. 
+\end{itemize}
+
+\subsection{Nachteile - SHAP}
+\begin{itemize}
+    \item Aufbau auf Shapley: Wie bei den Vorteilen übernimmt SHAP auch die Nachteile von Shapley mit dem exponentiell steigenden Rechenaufwand durch das Berechnen von jeder möglichen Koalition der Parameter.
+    \item Vertrauensproblem: Bei KernelSHAP können durch spezielles Auswählen von Daten für ähnliche Beobachtungen konträre Erklärungen generiert werden. Bei TreeSHAP können zudem Daten, welche keinen Einfluss auf das Ergebnis haben, durch die angepasste Nutzenfunktion einen fiktiven Einfluss zugeteilt bekommen.
+\end{itemize}
+
+Das Vertrauensproblem von SHAP, welches in \cite{slack2020fooling} beschrieben wird, ist im Kontext von VOESTat+ zu vernachlässigen, weil eine vertrauensvolle Beziehung zwischen Entwickler und Benutzer besteht. 
+
+\newpage
+\section{PDP}
+Mit der Methode der PDP (Partial Dependence Plot) kann der Einfluss von einem oder zwei Parametern auf das Ergebnis eines Modells gezeigt werden. Dies ermöglicht den marginalen Einfluss eines Merkmals über seinen Wertebereich auf die interessierende Variable zu visualisieren.
+\subsection{Vorteile - PDP}
+\begin{itemize}
+    \item Einfach zu erklären: Da Vertrauen auf Verständnis sowie Nachvollziehbarkeit aufbaut, ist es immer wünschenswert, dass eine Methode vom Anwender leicht zu verstehen ist. Im Fall von PDPs ist dies sehr einfach, weil das Konzept von einem Graphen mit einer Werteverteilung auf der x-Achse und das Verhalten einer Funktion auf der y-Achse ein intuitives Konzept ist.
+    \item Output einfach zu interpretieren: Wie schon im vorangegangen Punkt angesprochen, ist ein Output dieser Form sehr einfach zu interpretieren. Im Rahmen von VOESTat+, welches den Benutzer zum Beispiel beim Verstehen von Produktionsdatensätzen unterstützen soll, kann eine Veränderung in der Vorhersage ab einem gewissen Punkt im interessierenden Parameter auf einen Grund für den Fehler hinweisen.
+    \item Kategorische Variablen: Aufgrund der in VOESTat+, verwendeten Datensätze, ist die Analyse von mehrkategoriellen Zielvariablen essentiell. PDPs ermöglichen dies durch das Berechnen einer Schätzung für jede der Kategorien der interessierenden Variable. Somit kann nicht nur, zum Beispiel, das Auftreten von Fehlern untersucht werden, sondern auch mehrkategorielle Variablen wie die Art des Fehlers.
+\end{itemize}
+
+\subsection{Nachteile - PDP}
+%muss noch umgeschrieben werden
+\begin{itemize}
+    \item Korrelationen: PDPs gehen von der Annahme aus, dass die untersuchte exogene Variable unabhängig von anderen Variablen ist. In der Realität sind Variablen jedoch oft miteinander korreliert. Dies kann zu verzerrten oder irreführenden Darstellungen führen, was vor allem in einem Produktionsumfeld mit einer Abfolge von Produktionsschritten zu einem Verwerfen der Unabhängigkeitsannahme führt. 
+    \item Anzahl der möglichen Variablen: PDPs sind in der Regel auf die Darstellung von ein oder zwei Variablen beschränkt, welche in Abhängigkeit zur Schätzung gestellt werden. Bei Modellen mit vielen Einflussvariablen kann dies zu einer starken Vereinfachung führen. Es ist schwierig, Interaktionen zwischen mehr als zwei Variablen zu visualisieren, was bei hochdimensionalen Modellen zu einem Informationsverlust in der Visualisierung führen kann. Dies begrenzt die Fähigkeit, umfassende Einblicke in das Modellverhalten und deren Schätzungen bei mehreren einander beeinflussenden Variablen zu gewinnen.
+
+\end{itemize}
+Somit sind PDPs in VOESTat+ nur in einer 2-dimensionalen Form aktuell in Verwendung und sollten in Kombination mit den anderen Methoden angewandt werden. Sie bieten eine einfache und intuitive Darstellung, die auch für Benutzer ohne tiefgehende technische Kenntnisse leicht verständlich ist. 
+%Alternative Methoden wie Accumulated Local Effects (ALE) Plots können diese Schwächen in bestimmten Szenarien ausgleichen. Auch ICE werden weiterhin in Betracht gezogen. 
+Deshalb bleiben PDPs aufgrund ihrer einfachen Anwendung und Interpretation die aktuell bevorzugte Methode bei der Analyse von Verhalten über den Wertebereich in VOESTat+.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+\chapter{Praktische Anwendung mit Produktionsdaten}
+In diesem Kapitel wird ein Beispieldurchlauf von VOESTat+ mit einem vorbereiteten und modifizierten Praxisdatensatz aus der Produktion vorgenommen und die Ergebnisse der unterschiedlichen verwendeten Methoden demonstriert.
+
+\section{Die Daten}
+Der verwendete Datensatz mit realen Produktionsdaten wurde von der Abteilung BTQ (Bramme Technik Qualitätssicherung) erstellt und weiter angepasst, um einen Testdatensatz zu erstellen, welcher drei Variablen mit hohem Einfluss auf das Ergebnis beinhaltet. Die drei signifikanten Variablen des Datensatzes waren vor dem ersten Durchlauf nicht bekannt, jedoch konnten sie mithilfe von VOESTat+ unter der Verwendung von XAI identifiziert werden. \\ \\
+Der Datensatz beinhaltet 19027 Beobachtungen, welche jeweils aus 47 erklärenden Variablen und einer Zielvariable bestehen. \\ \\
+Aus dem Datensatz wird sich im Zuge der Analyse mit Methoden der Explainable AI herausstellen, dass nur jene drei Variablen einen signifikanten Effekt im Bezug auf das vorhergesagte Ergebnis aufweisen.\\ \\
+Diese drei interessierenden Variablen werden als metrisch von VOESTat+ eingelesen und verhalten sich wie folgt:
+\newpage
+\begin{enumerate}
+    \item Variable ''Anlage'':\\ \\
+    Wie aus der Verteilung der Variable ersichtlich, ist es naheliegend, dass es sich bei der Variable um eine Anlagennummer, welche ein nominales Skalenniveau besitzt, handelt. Somit wird die Variable im Laufe der Datenaufbereitung von VOESTat+, mit mehreren Dummyvariablen, dummyfiziert.
+        \begin{table}[ht]
+        \centering
+        \begin{tabular}{rrrrrr}
+          \hline
+         Anlage: & 4 & 5 & 6 & 7 & 8 \\
+          \hline
+         Beobachtungen: & 4539 & 2834 & 4148 & 4057 & 3449 \\
+           \hline
+        \end{tabular}
+        \end{table}
+    \item Variable ''1416 CC.SPIE.Schwankungen Brammdurchsc Durchschnitt'':\\ \\
+    Die Variable wird als metrisch eingelesen und wird auch in der Datenaufbereitung als metrisch behandelt.
+        \begin{table}[ht]
+        \centering
+        \begin{tabular}{rrrrrrr}
+          \hline
+         & Min. & 1st Qu. & Median & Mean & 3rd Qu. & Max. \\ 
+          \hline
+        1 & -0.49 & 0.66 & 0.90 & 0.98 & 1.18 & 11.25 \\ 
+           \hline
+        \end{tabular}
+        \end{table}
+    \item Variable ''0626 CC.KOKI.OSZILLIERPROGRAMM Rep. Meßwert":\\ \\
+    Bei dieser Variable handelt es sich, wie bei den Anlagennummern, um eine als initial metrisch eingelesene Variable, welche jedoch durch Vorwissen und die offensichtliche Verteilung als nominal behandelt wird. Diese Variable gibt das Oszillierprogramm an, welches nicht in ein direktes Verhältnis gesetzt werden kann, deshalb wird es als nominal, mit mehreren Dummyvariablen, klassifiziert.
+        \begin{table}[ht]
+        \centering
+        \begin{tabular}{rrrrr}
+          \hline
+         Programm: & 1 & 7 & 10 & 12 \\
+          \hline
+         Beobachtungen: & 505 & 10681 & 7390 & 451 \\
+           \hline
+        \end{tabular}
+        \end{table}
+\end{enumerate}
+
+\newpage
+\section{Ergebnisse}
+Nachfolgend werden die Ergebnisse der Methoden LIME (Local Interpretable Model-agnostic Explanations) sowie den Shapley-Werten und SHAP (SHapley Additive exPlanations) zusammen und den PDPs (Partial Dependence Plots) diskutiert.
+
+\subsection{LIME}
+LIME analysiert die Ergebnisse eines komplexen Modells auf lokaler Ebene, unter der Verwendung von intrinsisch verständlichen Modellen wie Entscheidungsbäumen und linearen Modellen. In dieser Auswertung der Ergebnisse wurden lineare Modelle angewandt, um eine im Vorhinein ausgewählte anschauliche Beispielbeobachtung, zu erklären.
+\begin{figure}[h]
+\centering
+\includegraphics[scale = 0.5]{LIME Plot.png}
+\caption{Ergebnis von LIME für fehlerhafte (links markiert) und fehlerfreie (rechts markiert) Schätzung}
+\label{fig:lime_ergebnis}
+\end{figure}\\
+
+Im oberen Teil der Abbildung \ref{fig:lime_ergebnis} ist ersichtlich, wie sich das lokale Erklärungsmodell bei einem geschätzten Fehler verhält:
+\begin{itemize}
+    \item Den größten Einfluss hat die Anlage 6, diese ist durch die Dummyfizierung der Variable Anlage zu einer eigenen Variable mutiert worden.
+    \item Weiters trägt die Spiegelschwankung mit einem Wert größer 1,172 dazu bei, dass das Modell auf einen Fehler entscheidet.
+    \item Auch das Oszillierprogramm 7 wirkt sich positiv für die Entscheidung auf einen Fehler aus.
+\end{itemize}
+
+%den größten Einfluss hat die Anlage, in diesem Fall als Nummer 6. Weiters trägt die %Spiegelschwankung mit einem Wert größer 1,172 dazu bei dass das Modell auf einen Fehler entscheidet.
+%Auch wirkt sich das Osszilierprogramm mit dem Wert 7 positiv für die Entscheidung auf einen Fehler aus.\\
+
+Der untere Teil der Abbildung \ref{fig:lime_ergebnis} zeigt einen Fall, in dem LIME erklärt, welche Variablen ausschlaggebend waren, dass das Modell, für eine spezifische Beobachtung, auf keinen Fehler entschieden hat:
+\begin{itemize}
+    \item Hier ist wieder die Anlage der wichtigste Indikator: die Beobachtung stammt von Anlage 5.
+    \item  Weiters ist der Wert der Spiegelschwankung, welcher sich zwischen 0,666 und 0,898 befindet, ein positiver Einfluss für den Entscheid, dass kein Fehler vorliegt.
+    \item Auffällig ist das Oszillierprogramm, welches in dieser Beobachtung wieder den Wert 7 annimmt, sich jedoch auf die Erklärung eines nicht-Fehlers negativ auswirkt.
+\end{itemize}
+
+%Der untere Teil der Grafik zeigt einen Fall in dem LIME erklärt, welche Parameter ausschlaggebend %waren, dass das Modell auf keinen Fehler entschieden hat. Hier ist wieder die Anlage der wichtigste %Indikator, weil in dieser Beobachtung die Anlage 5 verwendet wurde. Weiters ist der Wert der %Spiegelschwankung welcher sich zwischen 0,666 und 0,898 befindet, ein positiver Einfluss für den %Entscheid auf das nicht vorhanden sein eines Fehler. Auffällig ist das Oszillierprogramm welches in %dieser Beobachtung wieder den Wert 7 annimmt jedoch sich auf die Erklärung eines nicht Fehlers %negativ auswirkt.
+
+\newpage
+\subsection{Shapley und SHAP}
+Um die SHAP Ergebnisse, welche in VOESTat+ wie in den Grafiken \ref{fig:shap_ergebnis} und \ref{fig:shapbox_ergebnis} visualisiert werden, zu erhalten, werden zwei Schritte benötigt. Zuerst werden nach der Berechnung des Modells mit der Funktion xgb.plot.shap.summary() aus dem Paket xgboost die SHAP-Werte für jede Beobachtung ausgelesen. Nach dem Auslesen wird der Absolutwert der SHAP-Werte verwendet und aus diesen der Mittelwert für jede Variable berechnet.
+\begin{figure}[h]
+\includegraphics[scale = 0.55]{SHAP.png}
+\caption{Ergebnis von SHAP als Mittelwerte als Balkendiagramm}
+\label{fig:shap_ergebnis}
+\end{figure}
+In Abbildung \ref{fig:shap_ergebnis} werden die absoluten SHAP-Mittelwerte der aus SHAP als wichtig hervorgegangenen Variablen in einem Balkendiagramm aufgetragen.\\
+Hier ist das Ergebnis konsistent mit dem Ergebnis von LIME in Abbildung \ref{fig:lime_ergebnis}:
+\begin{itemize}
+    \item Die Dummyvariable für Anlage 6 ist mit einem absoluten mittleren SHAP-Wert von knapp über 2 als die einflussreichste Variable angegeben wird.
+    \item Weiters ist die Variable der Spiegelschwankungen die zweitwichtigste Variable mit einem SHAP-Wert um 1,3.
+    \item Die Dummyvariable für das Oszillierprogramm 10 erhält einen SHAP-Wert von circa 0.8 und ist somit laut der SHAP-Methode die drittwichtigste Variable für die Erklärung. 
+\end{itemize}
+
+\begin{figure}[h]
+\centering
+\includegraphics[scale = 0.55]{SHAP_Box.png}
+\caption{Ergebnis von SHAP als Boxplot}
+\label{fig:shapbox_ergebnis}
+\end{figure}
+Abbildung \ref{fig:shapbox_ergebnis} zeigt die Verteilung der absoluten SHAP-Werte in Form eines Boxplots.
+
+\newpage
+\subsection{PDP}
+Für die Partial Dependence Plots wurde zuerst die Funktion pdp() aus dem Package partial verwendet, um die einzelnen Werte jeder Beobachtung zu erhalten. Diese wurden in Folge mit ggplot() als Liniendiagramm und als Streudiagramm visualisiert.\\
+\begin{figure}[h]
+\centering
+\includegraphics[scale = 0.6]{PDP_Anlage_6.png}
+\caption{Ergebnis von PDP für Anlage 6}
+\label{fig:pdp_anlage_6_ergebnis}
+\end{figure}\\
+In Abbildung \ref{fig:pdp_anlage_6_ergebnis} sind, da es sich um eine Dummy-Variable handelt, nur die beiden roten Punkte relevant, die blaue Linie simuliert nur einen linearen Anstieg der Schätzung zwischen den beiden Ausprägungen. Wie aus der Abbildung ersichtlich ist, wenn nicht die Anlage 6 verwendet wurde, ist die marginale Schätzung auf 0 somit kein Fehler. Wenn jedoch die Anlage 6 verwendet wurde, ist die marginale Schätzung fast bei 0,3. % und hat somit einen großen Einfluss auf das Ergebnis, weil ab 0,5 auf einen Fehler entschieden wird.\\
+\begin{figure}[h]
+\centering
+\includegraphics[scale = 0.6]{PDP_Spiegelschwankung.png}
+\caption{Ergebnis von PDP für X1416 CC.SPIE.Schwankungen Brammdurchsc Durchschnitt}
+\label{fig:pdp_spiegel_ergebnis}
+\end{figure}\\
+In Abbildung \ref{fig:pdp_spiegel_ergebnis} spiegelt sich das Ergebnis von LIME aus dem oberen Teil von Abbildung \ref{fig:lime_ergebnis} wider, indem eine Sprungstelle bei 1,172 existiert. An diesem Punkt springt die marginale Schätzung von null auf knapp über 0,2. Somit könnte eine Kombination aus der Variable für Anlage 6 und dieser, je nach gewähltem Entscheidungslevel, schon auf einen Fehler entscheiden.
+
+\newpage
+\begin{figure}[h]
+\centering
+\includegraphics[scale = 0.6]{PDP_Oszillierprogramm_10.png}
+\caption{Ergebnis von PDP für Oszillierprogramm 10}
+\label{fig:pdp_oszprog_ergebnis}
+\end{figure}
+In Abbildung \ref{fig:pdp_oszprog_ergebnis} handelt es sich erneut um eine Dummy-Variable, welche angibt, ob das Oszillierprogramm 10 verwendet wurde oder nicht. Hier wird der marginale Anteil an der Schätzung mit circa 0,18 beziffert, falls es nicht verwendet wurde, und fällt auf null, falls es verwendet wurde. \\ \\
+Die Ergebnisse aus dem oberen Teil der Abbildung \ref{fig:lime_ergebnis} und der Ergebnisse der PDPs zeichnen ein einheitliches Bild. %Indem die ausgewählte Beispielbeobachtung aus Abbildung \ref{fig:lime_ergebnis} mit der Verwendung von Anlage 6, einem Spiegelschwankungswert von über 1,172 und dem Oszillierprogramm 7 auf einen Fehler entscheiden. 
+Durch die kumulierten Schätzungen von 0,3 für die Anlage 6, den Spiegelschwankungen mit 0,2 über 1,172 und der Nichtverwendung des Oszillierprogramms 10 mit einem Wert von 0,18 ergibt sich eine kumulierte Schätzung von 0,68. Dieser Wert liegt über dem standardmäßigen Entscheidungslevel für binäre Variablen von 0,5 und somit ist, basierend auf den PDP-Werten, auch mit den Variablenkombinationen von Abbildung \ref{fig:lime_ergebnis} auf einen Fehler zu schließen.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+\chapter{Fazit}
+
+Zusammenfassend lässt sich sagen, dass der Einsatz von XGBoost in Kombination mit XAI-Methoden wie SHAP und PDP im Rahmen von VOESTat+ eine leistungsfähige Kombination zur Interpretation komplexer Modelle darstellt. Dies gilt sowohl in Hinblick auf die faire Bewertung des Einflusses einzelner Variablen als auch hinsichtlich der anschaulichen Darstellung ihrer marginalen Effekte. Während SHAP, insbesondere in Form von \\TreeSHAP, konsistente und mathematisch fundierte Erklärungen liefert, ermöglichen PDPs eine intuitive Visualisierung des Verhaltens der Modelle über den gesamten Wertebereich der interessierenden Variablen. Lokale Ansätze wie LIME bieten zwar schnelle Einblicke in einzelne Vorhersagen, weisen jedoch bei hochdimensionalen Datensätzen hinsichtlich Stabilität und Rechenaufwand Einschränkungen auf. Somit muss, ähnlich wie bei der Modellselektion in anderen Anwendungsbereichen, ein Kompromiss zwischen interpretierbarer Genauigkeit und praktischer Umsetzbarkeit gefunden werden. Insgesamt zeigt sich, dass die Kombination unterschiedlicher XAI-Methoden einen umfassenderen Einblick in die Entscheidungsprozesse der Modelle ermöglicht und damit das Vertrauen in die Ergebnisse komplexer maschineller Lernverfahren stärkt.
+
+
+\newpage
+\bibliographystyle{apacite}
+\bibliography{ref}
+\end{document}
+
+

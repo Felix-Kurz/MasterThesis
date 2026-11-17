@@ -1,0 +1,58 @@
+top - 12:43:34 up 3 days, 19:18, 42 users,  load average: 87.19, 83.81, 84.41
+Tasks: 27450 total,  71 running, 27379 sleeping,   0 stopped,   0 zombie
+Cpu(s):  4.3%us,  0.1%sy,  0.0%ni, 95.6%id,  0.0%wa,  0.0%hi,  0.0%si,  0.0%st
+Mem:     14893G total,     1538G used,    13354G free,        2G buffers
+Swap:      298G total,        0G used,      298G free,      348G cached
+
+    PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND
+1774668 k232474   20   0  311g 310g  18m R  100  2.1   1092:39 rsession
+1773679 k232474   20   0  279g 279g  18m R  100  1.9   1094:11 rsession
+1780437 k232474   20   0  251g 249g  18m R  100  1.7   1088:33 rsession
+ 403569 k232474   20   0 30120  21m  860 R   30  0.0   0:08.97 top
+ 457086 k232474   20   0 2557m 227m  48m S    6  0.0  91:52.22 rstudio
+1773642 k232474   20   0 2417m 182m  47m S    2  0.0  25:27.96 rstudio
+1780393 k232474   20   0 2458m 204m  47m S    1  0.0  20:06.85 rstudio
+1774636 k232474   20   0 2454m 202m  47m S    1  0.0  21:13.37 rstudio
+ 449448 k232474   20   0  510m  31m  21m S    0  0.0   0:44.23 nautilus
+ 389980 k232474   20   0  101m 2008 1084 S    0  0.0   0:00.25 sshd
+ 389981 k232474   20   0 14960 3784 1256 S    0  0.0   0:00.31 tcsh
+ 446844 k232474   20   0  156m 3616 2760 S    0  0.0   0:00.06 gnome-keyring-d
+ 448727 k232474   20   0  156m 3616 2760 S    0  0.0   0:00.06 gnome-keyring-d
+ 449372 k232474   20   0  162m  78m  34m S    0  0.0   6:06.46 Xvnc
+
+
+
+
+  --------------+------------------+----------+----------+-----------+
+         JOBid  |  JOBname         | WallTime | ElapTime | ExtCmdKey |
+  --------------+------------------+----------+----------+-----------+
+   274923.mach  |  Capsule-XL      |    240:0 |    70:30 |     --    |
+   274947.mach  |  Capsule-XX      |    240:0 |    18:15 |     --    |
+   274948.mach  |  Capsule-XX      |    240:0 |    18:12 |     --    |
+   274949.mach  |  Capsule-XX      |    240:0 |    18:11 |     --    |
+  --------------+------------------+----------+----------+-----------+
+
+
+mach k2303/k232474> cat /proc/1774668/cpuset
+/PBSPro/274948.mach
+mach k2303/k232474> cat /proc/1773679/cpuset
+/PBSPro/274947.mach
+mach k2303/k232474> cat /proc/1780437/cpuset
+/PBSPro/274949.mach
+mach k2303/k232474>
+
+
+
+mach k2303/k232474> echo "PID\t%CPU\t%MEM\tKAPSEL / PBS-JOB"; echo "----+----+----+----+----+----+----+----+----+"; foreach pid (`pgrep -u $USER rsession`)
+PID     %CPU    %MEM    KAPSEL / PBS-JOB
+----+----+----+----+----+----+----+----+----+
+foreach?     set cpuset = `cat /proc/$pid/cpuset`
+foreach?     set cpu = `ps -p $pid -o %cpu=`
+foreach?     set mem = `ps -p $pid -o %mem=`
+foreach?     set job = `echo $cpuset | sed 's|/PBSPro/||'`
+foreach?     echo "$pid\t$cpu%\t$mem%\t$job"
+foreach? end
+457120  61.5%   0.2%    274923.mach
+1773679 99.9%   1.9%    274947.mach
+1774668 99.9%   2.0%    274948.mach
+1780437 99.9%   1.7%    274949.mach

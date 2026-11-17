@@ -1,0 +1,72 @@
+qstat -f 277036.mach | egrep "Job_Name|job_state|Resource_List.select|Resource_List.mem|resources_used.mem"
+meminfo-free-RAM
+
+set max_memory = 470g
+setenv R_MAX_VSIZE 429496729600
+load.ExecEnv::Xenial_Ubuntu16_04_x86_64
+rstudio
+
+
+   went out of operation this morning at about 9:25am.
+   Unfortunately the recover into multiuser production
+   took quite some effort & time...
+
+07-Apr-2026 MeJ
+   This morning a Hardware Exception in Blade r004i01b06
+   triggered a system maintenance.
+
+05-Jun-2026 MeJ
+   This afternoon (about 3:32pm) a Voltage Regulator
+   Moduled signaled a too low voltage level: All of the
+   vnodes r001i23b?? went offline. This triggered an
+   unplanned maintenance.
+
+
+28-Jul-2026 MeJ
+   Due to a CATERR Exception on the NUMAfabric link
+   between BMC r003i01b13 and r003i01b07, respectively,
+   mach.edvz.uni-linz.ac.at went out of multiuser operation
+   (production) as of today morning. Fortunately we were able
+   to recover a total of 118  compute blades (==> 236 vnodes);
+   they sum up to 1888 CPU Cores and some 15104 GigaBytes of RAM).
+
+   Please continue your computations. As always, please, bear
+   with us and stay tuned!
+
+# ------------------------------------------------------------------
+   Contact the system orga team if you have a question!
+
+   mailto: johann.messner@zid.uni-linz.ac.at  (Tel.-Klappe 8203), or
+           scadmin@jku.at
+# ------------------------------------------------------------------
+
+mach k2303/k232474> top -u k232474
+top - 13:31:16 up 35 days, 20:20, 49 users,  load average: 60.12, 53.61, 51.27
+Tasks: 27545 total,  12 running, 27533 sleeping,   0 stopped,   0 zombie
+Cpu(s):  2.6%us,  0.1%sy,  0.0%ni, 97.3%id,  0.0%wa,  0.0%hi,  0.0%si,  0.0%st
+Mem:     14893G total,     1034G used,    13858G free,        0G buffers
+Swap:      298G total,        0G used,      298G free,      419G cached
+
+    PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND
+1074915 k232474   20   0  184g 182g  25m R  156  1.2  22308:27 rsession
+1064369 k232474   20   0 8840m 7.8g  21m R  144  0.1   9:32.02 rsession
+ 666297 k232474   20   0 30196  21m  860 R   32  0.0   0:09.50 top
+1064236 k232474   20   0 2490m 235m  54m S    8  0.0 123:51.68 rstudio
+1074875 k232474   20   0 2469m 222m  53m S    6  0.0 162:55.87 rstudio
+1060382 k232474   20   0 2584m 265m  54m S    1  0.0 154:30.09 rstudio
+1169689 k232474   20   0  286m 246m 1920 S    1  0.0 230:10.53 gvfsd
+1169231 k232474   20   0  157m  74m  28m S    0  0.0  14:36.35 Xvnc
+ 299673 k232474   20   0 53704 1540  800 S    0  0.0   0:12.57 screen
+ 299674 k232474   20   0 15272 4284 1228 S    0  0.0   0:00.15 tcsh
+ 661091 k232474   20   0  101m 2060 1112 S    0  0.0   0:00.00 sshd
+ 661092 k232474   20   0 13460 2168 1072 S    0  0.0   0:00.11 tcsh
+ 661132 k232474   20   0 45188 1864 1312 S    0  0.0   0:00.00 sftp-server
+ 666026 k232474   20   0  101m 2008 1092 S    0  0.0   0:00.00 sshd
+ 666027 k232474   20   0 15768 4524 1244 S    0  0.0   0:00.24 tcsh
+1059249 k232474   20   0 13020 1748 1000 S    0  0.0   0:00.04 Capsule-XXL-x86
+1059256 k232474   20   0 65156 8396 2724 S    0  0.0   0:00.06 xterm
+1059258 k232474   20   0 16792 2168 1660 S    0  0.0   0:00.00 expect
+1059259 k232474   20   0 12628 1248  952 S    0  0.0   0:00.00 csh
+1059262 k232474   20   0 47540 2416 1816 S    0  0.0   0:00.01 qsub
+1059268 k232474   20   0 47540  956  356 S    0  0.0   0:00.00 qsub
+1059335 k232474   20   0 15688 4464 1244 S    0  0.0   0:00.24 tcsh

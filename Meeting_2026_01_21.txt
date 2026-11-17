@@ -1,0 +1,70 @@
+birthyear austauschen mit contryear
+interval_lower sinnhaftigkeit überprüfen sonst raus
+statt intervall_upper vll überprüfen
+kein topcoding weil cen_flag
+
+
+
+Neue Variablen probieren:
+austrian_dummy
+eu_dummy (stsl aus stammdaten) nrn für codierung
+education (mit missing cat) aus reports ausbildungsimputation
+blue/white/others
+tenure pro firma aus quaterfiles (eigene quaterfiles für tenure und exp)^2 i.e. lin + quad
+lebendgeburt_counter kommt aus qualdat mit 49
+dg nace mit zweistellen oder 3 timetest
+bundesland der firma wieder dg
+rgs als imputation für bundesland auch dg (regiongeschäftsstelle AMS)
+
+
+
+
+
+
+2026_03_05
+eu zu ewr dummy
+
+fertility aus qual nicht cat 
+
+
+tenure quad nicht vergessen
+
+
+2026_05_19
+environment clearen während eines durchlaufs -> sonst ram sprengen
+cap erhöhen exper enture zu 60
+tobit mit spezifikation von v4 laufen lassen somit 6 version 3x tobit 3x xgboost
+
+
+aufbau masterarbeit / präsi
+intro:
+	-motivation
+	-stand der literatur
+	-contribution
+daten (bg dann lz)
+methoden (tobit, xgboost, beurteilungskriterien, SHAP)
+ergebnisse
+	-standard tobit model (card) (tobit mit v1 spezifikation)
+	-neue ergebnisse (spezifiktaion v4 mit tobit, dann v1 und v4 xgboost)
+	-vergleich tabelle aus report (hier ohne training test split (volle daten für training und test (wie bisher schon bei tobit für vergleichbarkeit)
+	-SHAP
+	-validierung trainig test split
+
+kein trainings test split mehr
+
+xgboost ohne training / test split laufen lassen
+
+tobit und xgboost auf gemeinsame traings daten evaluieren und vergleichen 
+	und dann extra xgboost auf "test" set nochmal evaluieren
+
+
+2026_06_19
+Shapley genauer definieren, allgemein versändliche erklärung
+
+marginaler beitrag eines features auf die prediction einer beobachtung
+
+tobit v4 aus beiden plots heraußen, im density plot bg baseline hinzu
+
+mail an wolfgang mit eigener zensierung von bg wages über topcoding
+
+selbstsprechendere überschrift für tabels

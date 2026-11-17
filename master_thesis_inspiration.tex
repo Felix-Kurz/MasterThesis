@@ -1,0 +1,818 @@
+\documentclass[12pt,a4paper,oneside,titlepage]{book}
+
+% -----------------------------------------------------------------------------
+% Full example / inspiration draft based on the implemented thesis project.
+% Use this file as a writing reference; master_thesis.tex remains the clean
+% working version unless the example prose is deliberately transferred there.
+% -----------------------------------------------------------------------------
+
+% Language and typography
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{setspace}
+
+% Page layout
+\usepackage[
+  a4paper,
+  left=32mm,
+  right=25mm,
+  top=28mm,
+  bottom=28mm,
+  headheight=15pt
+]{geometry}
+
+% Mathematics, tables, and figures
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{threeparttable}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage{subcaption}
+\usepackage{xcolor}
+
+% References and navigation
+\usepackage[round,authoryear]{natbib}
+\usepackage[hidelinks]{hyperref}
+\usepackage[nameinlink,noabbrev]{cleveref}
+
+% Headers and footers
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\nouppercase{\leftmark}}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancypagestyle{plain}{%
+  \fancyhf{}
+  \fancyfoot[C]{\thepage}
+  \renewcommand{\headrulewidth}{0pt}
+}
+
+% General document settings
+\onehalfspacing
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.6em}
+\graphicspath{{figures/}{overleaf_data/figures/}}
+
+% Useful mathematical operators
+\DeclareMathOperator{\E}{E}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\RMSE}{RMSE}
+\DeclareMathOperator{\MAE}{MAE}
+
+% Draft notes are visible while \thesisdrafttrue is active. Change this to
+% \thesisdraftfalse before submitting the thesis.
+\newif\ifthesisdraft
+\thesisdrafttrue
+\newcommand{\draftnote}[1]{%
+  \ifthesisdraft
+    \par\noindent\colorbox{yellow!20}{%
+      \parbox{0.94\textwidth}{\textbf{Draft note:} #1}%
+    }\par
+  \fi
+}
+
+% Figure helper. While an image is missing, a labelled placeholder is shown.
+% Example:
+% \thesisfigure[0.85\textwidth]{my_plot.png}{My caption}{fig:my-plot}
+\newcommand{\thesisfigure}[4][0.85\textwidth]{%
+  \begin{figure}[H]
+    \centering
+    \IfFileExists{#2}{%
+      \includegraphics[width=#1]{#2}%
+    }{%
+      \fbox{%
+        \parbox[c][45mm][c]{0.85\textwidth}{%
+          \centering Missing figure: \texttt{\detokenize{#2}}%
+        }%
+      }%
+    }
+    \caption{#3}
+    \label{#4}
+  \end{figure}
+}
+
+% Thesis metadata: edit these fields first.
+\newcommand{\thesistitle}{De-censoring Top-coded Wages in Austrian Social Security Data}
+\newcommand{\thesisauthor}{Felix Kurz}
+\newcommand{\thesistype}{Master's Thesis}
+\newcommand{\degreeprogramme}{Analytic Methods}
+\newcommand{\university}{JKU Department of Economics}
+\newcommand{\supervisors}{Rudolf Winter-Ebmer and Wolfgang Frimmel}
+\newcommand{\submissiondate}{\today}
+
+\hypersetup{
+  pdftitle={\thesistitle},
+  pdfauthor={\thesisauthor}
+}
+
+\begin{document}
+
+% -----------------------------------------------------------------------------
+% Front matter
+% -----------------------------------------------------------------------------
+\frontmatter
+
+\begin{titlepage}
+  \centering
+  \vspace*{18mm}
+
+  {\Large \university\par}
+  \vspace{24mm}
+
+  {\Huge\bfseries \thesistitle\par}
+  \vspace{16mm}
+
+  {\Large \thesistype\par}
+  \vspace{6mm}
+
+  {\large \degreeprogramme\par}
+
+  \vfill
+
+  \begin{tabular}{@{}ll@{}}
+    Author: & \thesisauthor \\
+    Supervisors: & \supervisors \\
+    Submission date: & \submissiondate
+  \end{tabular}
+
+  \vspace*{12mm}
+\end{titlepage}
+
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+Administrative social-security records are an important source for empirical labour-market research, but the recorded contribution base is capped at a statutory ceiling. Wages above that ceiling are therefore top-coded, which removes precisely the variation needed to study high earners and the upper tail of the wage distribution. This thesis investigates whether gradient-boosted regression trees can recover these censored wages more accurately than the observed contribution base and a classical Tobit-style imputation model. Austrian social-security records (BG) are linked to Lohnzettel records (LZ), whose wage measure is not subject to the same social-security contribution ceiling. The LZ daily wage is used as the supervised-learning target and as the common evaluation benchmark.
+
+The empirical analysis covers 1994--2012 and is based on an initial random draw of 250,000 persons. After the sample restrictions and the BG--LZ linkage, the common comparison sample contains 1,036,156 person-year observations, of which 7.23\% are classified as censored. The main analysis reports an in-sample benchmark for comparability with the Tobit tradition. Predictive validity is evaluated separately by training the models on 1994--2011 and holding out 2012.
+
+The richer XGBoost specification produces the lowest errors in the main comparison. Among censored observations, its in-sample log-wage RMSE is 0.3038, compared with 0.5737 for the uncorrected BG wage and 0.4998 for Tobit V1. In the 2012 holdout, the corresponding RMSEs are 0.4702, 0.6146, and 0.5391. In daily-wage levels, the improvement in holdout RMSE is smaller because a few extreme wages dominate squared errors; however, XGBoost V4 reduces the censored-sample mean absolute error from 73.57 euros per day for BG and 59.63 for Tobit V1 to 47.70 euros per day. The results indicate that flexible supervised learning improves the recovery of top-coded wages, while also showing that the uncorrected BG measure remains a strong benchmark for uncensored observations.
+
+\textit{Keywords:} top-coded wages; administrative data; wage imputation; XGBoost; Tobit; temporal validation; SHAP.
+
+\chapter*{Zusammenfassung}
+\addcontentsline{toc}{chapter}{Zusammenfassung}
+Administrative Sozialversicherungsdaten sind eine wichtige Grundlage für die empirische Arbeitsmarktforschung. Die darin enthaltene Beitragsgrundlage ist jedoch durch die gesetzliche Höchstbeitragsgrundlage begrenzt. Einkommen oberhalb dieser Grenze werden daher zensiert beziehungsweise top-codiert beobachtet. Diese Masterarbeit untersucht, ob Gradient-Boosting-Modelle die nicht beobachteten Lohneinkommen oberhalb der Beitragsgrenze genauer rekonstruieren können als die unveränderte Beitragsgrundlage und ein klassisches Tobit-basiertes Imputationsverfahren. Dafür werden österreichische Sozialversicherungsdaten mit Lohnzetteldaten verknüpft. Der tägliche Lohn aus den Lohnzetteldaten dient sowohl als Zielvariable des maschinellen Lernverfahrens als auch als gemeinsamer Evaluierungsbenchmark.
+
+Die Analyse umfasst die Jahre 1994 bis 2012 und basiert auf einer anfänglichen Zufallsstichprobe von 250.000 Personen. Nach den Stichprobenrestriktionen und der Verknüpfung beider Datenquellen verbleiben 1.036.156 Personenjahresbeobachtungen, von denen 7,23\% zensiert sind. Der Hauptvergleich wird innerhalb der gemeinsamen Stichprobe durchgeführt, um die Vergleichbarkeit mit dem klassischen Tobit-Ansatz sicherzustellen. Zusätzlich werden die Modelle mit Daten von 1994 bis 2011 trainiert und außerhalb der Trainingsperiode anhand des Jahres 2012 evaluiert.
+
+Die umfangreichere XGBoost-Spezifikation erzielt insbesondere für zensierte Beobachtungen die geringsten Vorhersagefehler. Im zeitlichen Testdatensatz beträgt der logarithmische RMSE für XGBoost V4 0,4702, verglichen mit 0,6146 für die unveränderte Beitragsgrundlage und 0,5391 für Tobit V1. Auf der Ebene realer Tageslöhne fällt der Unterschied beim RMSE geringer aus, weil einzelne sehr hohe Löhne das quadratische Fehlermaß stark beeinflussen. Der mittlere absolute Fehler sinkt für zensierte Beobachtungen im Jahr 2012 dennoch von 73,57 Euro pro Tag für die Beitragsgrundlage und 59,63 Euro für Tobit V1 auf 47,70 Euro für XGBoost V4. Die Ergebnisse zeigen, dass flexibles überwachtes Lernen die Rekonstruktion top-codierter Löhne verbessert. Gleichzeitig bleibt die unveränderte Beitragsgrundlage bei nicht zensierten Beobachtungen ein schwer zu übertreffender Benchmark.
+
+\chapter*{Acknowledgements}
+\addcontentsline{toc}{chapter}{Acknowledgements}
+I would like to thank my supervisors, Rudolf Winter-Ebmer and Wolfgang Frimmel, for their guidance, critical questions, and support throughout this project. Their feedback helped me to turn a practical modelling exercise into a clearly defined empirical research question. I am also grateful to the colleagues and technical staff who made access to the administrative data and the high-performance computing environment possible. Finally, I would like to thank my family and friends for their patience and encouragement during the preparation of this thesis.
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+% -----------------------------------------------------------------------------
+% Main matter
+% -----------------------------------------------------------------------------
+\mainmatter
+
+\chapter{Introduction}
+\label{ch:introduction}
+
+\section{Motivation}
+Wages are a central outcome in empirical labour economics. They are used to measure earnings inequality, estimate returns to education and experience, describe career mobility, and compare workers and firms. Administrative social-security records are especially attractive for these purposes because they cover long employment histories and are less affected by recall error than survey data. Their administrative purpose, however, also creates a measurement problem: the contribution base is only recorded up to the statutory social-security ceiling. Once earnings exceed that ceiling, the observed value no longer reveals the worker's actual wage.
+
+This form of top-coding is not classical random measurement error. It is concentrated among workers in the upper part of the wage distribution, and the size of the missing amount increases with the true wage. Treating the recorded contribution base as the wage therefore compresses the upper tail and can understate wage dispersion. It can also distort comparisons between groups if their probabilities of crossing the ceiling differ. Dropping censored observations is not a satisfactory solution because it removes a systematically selected group of high earners. A useful correction must instead infer the missing wage variation from information that remains observable in the administrative data.
+
+Traditional corrections impose a parametric wage equation and extrapolate the censored part of the distribution. Modern machine-learning methods offer a complementary approach. Gradient-boosted trees can represent nonlinearities and interactions without requiring them to be specified in advance. Their usefulness for de-censoring nevertheless depends on an empirical question that cannot be answered using the top-coded data alone: whether the resulting predictions are close to wages observed in a source that is not subject to the same ceiling. The matched Lohnzettel data used in this thesis provide such a benchmark.
+
+\section{Institutional Setting and the Censoring Problem}
+The Austrian social-security data contain employment spells and the corresponding contribution bases, referred to throughout this thesis as BG wages. Contributions are assessed only up to a legally defined maximum that changes over calendar time. Below the applicable ceiling, the BG value contains substantial information about the worker's wage. At and above the ceiling, different true wages can generate the same or a very similar observed contribution base. The result is a pile-up near the threshold and a truncated observed upper tail.
+
+Lohnzettel records originate from payroll tax reporting and provide a second wage measure, denoted LZ. For the historical overlap available to this project, LZ wages are not capped by the social-security contribution ceiling in the same way. Linking the two sources by person, employer, and year makes it possible to observe the BG information that would normally be available to a researcher and, at the same time, an uncensored wage benchmark. This does not imply that BG and LZ are identical accounting concepts below the ceiling. Differences in covered payments, employment days, timing, and data processing can remain. For this reason, the LZ daily wage is described as the evaluation benchmark or target rather than as an error-free measure of a latent BG variable.
+
+\section{Research Question}
+The primary research question is:
+
+\begin{quote}
+Can top-coded wages in Austrian social-security data be recovered more accurately with XGBoost than with the uncorrected contribution base and a classical Tobit-style imputation model?
+\end{quote}
+
+Three subsidiary questions organise the empirical analysis. First, does the richer XGBoost specification improve prediction particularly among observations identified as censored? Second, does any advantage found in the common in-sample comparison persist when the models are trained on 1994--2011 and evaluated on a later, unseen year? Third, which observed variables contribute most strongly to the XGBoost predictions?
+
+The object of interest is de-censoring, not unrestricted wage forecasting. The model is intended to reconstruct wage information that is missing because of the contribution ceiling while using variables that remain available in the social-security records. Performance for uncensored observations is still reported because a correction method should not obtain gains above the ceiling by substantially worsening measurement below it.
+
+\section{Related Literature}
+This thesis connects four strands of literature. The first concerns censored dependent variables. The Tobit model introduced by \citet{tobin1958} represents an observed outcome as a censored version of a latent Gaussian regression variable. In administrative wage data, related procedures estimate a wage equation below or around the contribution ceiling and draw or predict values from the implied upper tail. The implementation by \citet{gartner2005} for German social-security wages is a particularly relevant example because it addresses a contribution-limit problem that is institutionally similar to the Austrian setting. Parametric corrections of this kind are transparent and directly model the censoring mechanism, but their upper-tail predictions depend on the specified functional form and distributional assumptions.
+
+The second strand studies the consequences of top-coding for wage-distribution analysis. Because censoring occurs non-randomly among high earners, uncorrected administrative wages compress measured inequality and can affect estimates involving education, occupation, firm characteristics, or worker mobility. Empirical work using administrative earnings records therefore commonly applies imputation or distributional correction before analysing the upper tail; see, for example, \citet{dustmann2009}. The appropriate correction depends on the research purpose. A model that reproduces a marginal wage distribution need not produce accurate observation-level wages, whereas the present thesis evaluates observation-level predictions directly against matched LZ outcomes.
+
+The third strand is predictive machine learning. Gradient boosting constructs an additive ensemble of weak learners that sequentially correct the errors of the existing model \citep{friedman2001}. XGBoost develops this approach into a scalable, regularised tree-boosting system \citep{chen2016}. Regression trees are well suited to the present problem because wage profiles can vary nonlinearly with age and experience and because the effect of an observed contribution-base wage may interact with employment history, firm characteristics, and censoring status. Unlike a linear Tobit equation, these interactions do not need to be enumerated before estimation.
+
+Finally, this thesis draws on interpretable machine learning. SHAP expresses a prediction as a baseline plus feature-level contributions derived from Shapley values \citep{shapley1953,lundberg2017}. Efficient tree-specific algorithms make these explanations feasible for large boosted-tree models \citep{lundberg2020}. SHAP does not turn a prediction model into a causal model, but it helps determine whether predictive performance is driven by economically meaningful wage information or by a narrow set of mechanical threshold variables.
+
+The specific contribution of this thesis is to combine these strands in a common matched-data design. Tobit and XGBoost are evaluated on the same observations and against the same uncensored LZ target, while temporal validation separates benchmark fit from evidence about generalisation.
+
+\section{Contribution}
+The thesis makes three empirical contributions. First, it constructs a linked BG--LZ comparison sample in which the information loss caused by the social-security ceiling can be measured directly. LZ wages play a dual role: they are the supervised-learning target for XGBoost and the external benchmark used to evaluate all methods.
+
+Second, the thesis compares three conceptually different solutions on common footing: leaving the observed BG wage unchanged, applying a Tobit-style correction, and predicting the LZ wage with restricted and extended XGBoost feature sets. The comparison is reported separately for all, censored, and uncensored observations and on both the log-wage and daily-wage scales.
+
+Third, the thesis distinguishes an in-sample benchmark from a temporal validation exercise. The main in-sample results retain comparability with the classical Tobit approach requested for this project. The 2012 holdout then provides a more demanding test of whether the estimated relationships transfer beyond the years on which the models were trained. SHAP and two additional robustness exercises document which variables drive the preferred specification and how much performance remains when especially informative predictors are removed or when workers are separated between training and test samples.
+
+The contribution is therefore not a new boosting algorithm. It is an implementation and validation study showing what is gained, and what remains uncertain, when flexible supervised learning is used to de-censor Austrian administrative wages.
+
+\section{Structure of the Thesis}
+The remainder of the thesis is organised as follows. \Cref{ch:data} describes the BG and LZ sources, their linkage, the corrected sample-construction pipeline, and the variables used in estimation. \Cref{ch:methods} presents the BG baseline, the Tobit V1 model, XGBoost V1 and V4, and the SHAP interpretation framework. \Cref{ch:evaluation} defines the in-sample and temporal designs and the error measures. \Cref{ch:results} reports descriptive evidence, predictive performance, model interpretation, and robustness checks. \Cref{ch:discussion} discusses the meaning and limitations of the findings, and \cref{ch:conclusion} concludes. Additional plots, variable definitions, and computational details are provided in the appendices.
+
+\chapter{Data and Sample Construction}
+\label{ch:data}
+
+\section{Austrian Social-Security Data (BG)}
+The first data source consists of Austrian social-security records containing person identifiers, employer identifiers, employment spells, contribution-base amounts, and employment-status information. The raw spell records are converted into annual observations. Spells that cross calendar years are divided into person--employer--year components, overlapping spell durations are adjusted, and wage amounts are allocated according to the duration falling into the relevant year.
+
+The contribution-base amount is not an uncensored wage measure. A year-specific statutory ceiling determines the maximum amount on which social-security contributions are assessed. The data-construction code uses the statutory sequence of ceilings to identify censored observations and to cap values that exceed the permitted annual amount. Daily BG wages are calculated from the contribution-base amount and the relevant employment duration. They are then converted into prices of the year 2000 and transformed using the natural logarithm.
+
+The administrative histories provide variables beyond the current wage. These include age, sex, nationality groups, education information, employment category, labour-market entry, experience, employer tenure, previous unemployment or return indicators, region, industry, and employer identifiers. They also allow the construction of a worker's wage history and employer-year coworker summaries. These variables form the information set from which censored wages can be inferred.
+
+The analysis uses 1994--2012, the period selected for the linked comparison and temporal-validation design. Although the pre-model file contains a longer employment history, observations outside this window do not enter the reported model results.
+
+\section{Lohnzettel Data (LZ)}
+The second data source contains Lohnzettel records submitted through the payroll-tax system. Two wage variables are available in the modelling data: \texttt{lz\_ywage}, an annual LZ wage, and \texttt{lz\_dwage}, a daily LZ wage. The daily measure is the main outcome in this thesis. It reflects wages relative to the coverage or employment duration represented in the LZ record; it should not be reconstructed mechanically as annual wage divided by 365.
+
+For comparability over time, LZ wages are multiplied by the same CPI conversion used for BG wages and expressed in year-2000 prices. The supervised-learning target is
+\begin{equation}
+  y_{ijt}=\log\!\left(\max\{w^{LZ}_{ijt}\cdot CPI^{2000}_t,1\}\right),
+  \label{eq:lz-target}
+\end{equation}
+where $i$ denotes the worker, $j$ the employer, and $t$ the calendar year. The lower bound of one avoids taking logarithms of non-positive values. Observations with a non-finite log daily wage are removed before the BG--LZ comparison sample is formed.
+
+LZ is essential to the research design. Without it, the true position of a censored worker above the contribution ceiling would remain unknown and model quality could only be assessed indirectly. With the linkage, each prediction can be compared with an observed LZ daily wage. Nevertheless, LZ remains an administrative measure with its own definition and potential outliers. It is treated as the best available uncensored benchmark, not as a perfectly measured economic concept.
+
+\section{Data Linkage and Common Comparison Sample}
+The BG and LZ records are linked using the person identifier (\texttt{penr}), employer identifier (\texttt{benr}), and calendar year (\texttt{contryear}). Before the linkage, the BG histories are converted into a consistent annual panel. Apprenticeship records are removed, relevant employment categories are retained, and very short employment spells are excluded where required by the construction rules. Person characteristics are merged into the spell panel, and the analysis is restricted to individuals aged 20 to 60 with non-missing age and sex information.
+
+Further restrictions are intended to create a stable wage observation. A worker must have accumulated at least 90 employment days. If a person has multiple employers within a year, the job with the highest BG wage is retained, so the final modelling unit can be interpreted as a person-year associated with one main employer. Employer-year information is deduplicated before it is merged, and observations without the required industry code are excluded. Wages must be finite after the BG wage and duration merge.
+
+The reported results use Version 3 of the data-building pipeline. An earlier version wrote yearly BG preparation files to one folder but subsequently loaded stale files from another folder. In addition, duplicated employer-year keys could produce unintended many-to-many joins. Version 3 uses sample-specific intermediate paths and reduces the establishment data to one record per employer and year before the merge. Outputs from the earlier pipeline are not used in this thesis.
+
+Computational constraints required the modelling pipeline to start from a reproducible random draw of 250,000 distinct persons, generated with seed 123. The number 250,000 therefore refers to persons at the beginning of the builder, not to the number of rows in the final results. After the construction rules and the restriction to 1994--2012, the saved modelling data contain 1,079,135 person-year observations for 110,515 distinct persons. Linking these observations to a finite LZ daily wage produces the final common sample of 1,036,156 observations. Thus, 42,979 modelling rows are lost at the final LZ matching step, corresponding to a linkage retention rate of approximately 96.0\%.
+
+The use of a common sample is important for model comparisons. Except for a small number of non-finite Tobit predictions, the BG baseline and both XGBoost specifications are evaluated on exactly the same observations. Differences in performance therefore reflect differences in predictions rather than changes in sample composition.
+
+\section{Outcome and Predictor Variables}
+The outcome for prediction and evaluation is the log real LZ daily wage defined in \cref{eq:lz-target}. The corresponding observed BG variable is the real log daily contribution-base wage. The binary censoring indicator equals one when the BG record meets the year-specific top-coding rules and zero otherwise.
+
+The V1 feature set is deliberately restricted and is used by both Tobit V1 and XGBoost V1. It contains age; the worker's leave-one-observation-out mean BG log wage and censoring share; employer-year size and its square; indicators for a one-year worker history, a one-person employer-year, and a small employer-year; and leave-one-observation-out employer-year means of coworker wages and censoring. Excluding the current observation from the worker and coworker means reduces the most direct form of mechanical self-inclusion.
+
+XGBoost V4 extends this set with experience, employer tenure, the lower and upper BG interval bounds, the censoring flag, sex, nationality groups, education and education-missingness indicators, employment-category variables, transitions involving unemployment, return after a gap, labour-market entry variables, the number of observed years, childbirth and child-count variables, calendar year, federal state, and industry. The interval bounds are calculated only from BG wages and statutory ceilings. No LZ wage, LZ-derived statistic, or future LZ outcome is included among the predictors.
+
+Several variables require careful interpretation. Employer size and coworker statistics are measured within the sampled administrative panel and are therefore not necessarily the employer's complete workforce. Coded variables such as industry, region, and education enter the current implementation as numeric values in the XGBoost matrix. Tree splits can partition these codes flexibly, but the result can still depend on the coding scheme. Missing or non-finite predictor values are replaced by zero before the XGBoost matrices are created; dedicated missingness indicators are available only for selected variables.
+
+\section{Censoring Status and Descriptive Statistics}
+The common comparison sample contains 1,036,156 observations. Of these, 74,963 are censored and 961,193 are uncensored, corresponding to a censored share of 7.23\%. The distinction is substantively important because aggregate results are dominated by the much larger uncensored group.
+
+The mean real LZ daily wage is 71.75 euros in year-2000 prices, and the median is 60.24. Among uncensored observations, the corresponding values are 62.51 and 57.90 euros. Censored observations are located much higher in the distribution: their mean LZ daily wage is 190.20 euros and their median is 162.60 euros. The overall 90th percentile of the LZ daily wage is 116.98 euros, close to the 112.63-euro 90th percentile of the observed BG measure. This similarity around the overall 90th percentile is consistent with the fact that censoring affects only the upper 7--8\% of observations.
+
+The sources diverge sharply within the censored group. The median LZ daily wage is 162.60 euros, compared with a median BG wage of 121.71 euros. At the 90th percentile within the censored group, the corresponding values are 266.79 and 129.64 euros. In contrast, the uncensored LZ and BG 90th percentiles differ by less than one euro. These diagnostics show why the uncorrected BG wage is a strong baseline for most observations but an inadequate measure once the ceiling binds.
+
+All descriptive outputs reported in the thesis are aggregates. The individual administrative records remain in the protected computing environment and are not exported to the local writing or Overleaf projects.
+
+\section{Data Security and Reproducibility}
+
+The underlying person-level data are confidential and are processed on the MACH high-performance computing system. Only scripts, execution logs, model objects permitted by the data environment, figures, and aggregate result files are transferred for documentation. This separation affects the reproducibility workflow: sample-building and model estimation must be reproduced on the secure system, whereas tables and thesis figures can be regenerated from aggregate outputs outside it.
+
+Each major processing step writes diagnostic row counts and checks the intended keys for duplicates. The modelling script also fixes the random seed, records model runtimes, and saves the selected number of boosting iterations. These practices do not replace a fully archived software environment, but they make it possible to trace a reported table back to the relevant sample, script, and model object.
+
+\chapter{Empirical Methods}
+\label{ch:methods}
+
+\section{Prediction Problem}
+Let $w^{BG,*}_{ijt}$ denote the uncapped wage concept underlying the contribution base and let $c_t$ denote the statutory ceiling in year $t$. A simplified representation of the recorded BG wage is
+\begin{equation}
+  w^{BG}_{ijt}=\min\{w^{BG,*}_{ijt},c_t\}.
+  \label{eq:topcoding}
+\end{equation}
+In practice, the administrative construction also depends on employment duration and special-payment rules, so \cref{eq:topcoding} is a conceptual summary rather than the complete coding algorithm.
+
+The prediction target is $y_{ijt}=\log(w^{LZ}_{ijt})$, while the available predictor vector $X_{ijt}$ contains BG wages, the ceiling-derived interval information, worker history, and job and employer characteristics. The preferred model estimates
+\begin{equation}
+  \widehat y_{ijt}=f(X_{ijt};\widehat\theta),
+\end{equation}
+where $f(\cdot)$ is either a parametric Tobit-style rule or a boosted-tree ensemble. Performance is measured using $e_{ijt}=\widehat y_{ijt}-y_{ijt}$.
+
+This formulation deliberately separates the target from the observed BG wage. LZ is not assumed to equal the latent variable in \cref{eq:topcoding} by definition. Rather, it is the uncensored administrative benchmark that the models are asked to approximate using only information that would remain available if LZ were absent.
+
+\section{Observed BG Wage as a Baseline}
+The first benchmark makes no correction and uses the real log BG daily wage as the prediction of the real log LZ daily wage:
+\begin{equation}
+  \widehat y^{BG}_{ijt}=\log(w^{BG}_{ijt}).
+\end{equation}
+This is a demanding and informative baseline. Below the ceiling, BG and LZ measure closely related wage information and often agree to within a small amount. A complex prediction model should therefore not be regarded as useful merely because it fits the overall wage distribution. It must improve materially where BG loses information while avoiding unnecessary errors for uncensored workers.
+
+For censored observations, the expected weakness of the baseline is clear. The prediction remains close to the legal threshold while the LZ wage can continue into the upper tail. Its errors should therefore be predominantly negative, meaning that BG underpredicts LZ. The size and direction of this benchmark error also provide a transparent economic scale against which the model-based corrections can be judged.
+
+\section{Tobit-Style Wage Imputation}
+\label{sec:tobit}
+
+\subsection{Standard V1 Specification}
+Tobit V1 provides the classical econometric correction. It assumes that a latent log wage follows a linear index with a Gaussian disturbance,
+\begin{equation}
+  y^{*}_{ijt}=X^{V1}_{ijt}\beta+\varepsilon_{ijt},
+  \qquad \varepsilon_{ijt}\sim N(0,\sigma^2).
+  \label{eq:tobit}
+\end{equation}
+The covariates $X^{V1}_{ijt}$ are the ten variables in the restricted feature set described in \cref{ch:data}. The model is estimated in R using \texttt{survival::survreg} with a Gaussian distribution and an \texttt{interval2} survival object. The interval bounds supplied to the estimator are constructed from the observed BG log wage and the applicable legal daily ceiling. For uncensored observations the record is treated as observed at its BG value; censored observations use the ceiling-derived bounds encoded by the data pipeline.
+
+After estimating $\widehat\beta$ and $\widehat\sigma$, the script calculates the fitted linear prediction. For a censored record, it then produces a draw from the conditional upper tail above the observed BG wage. If $\mu_{ijt}=X_{ijt}\widehat\beta$ and $a_{ijt}$ is the observed lower point, the implemented draw can be written as
+\begin{align}
+  k_{ijt} &= \Phi\!\left(\frac{a_{ijt}-\mu_{ijt}}{\widehat\sigma}\right),\\
+  \widehat y^{Tobit}_{ijt}
+  &=\mu_{ijt}+\widehat\sigma\,
+    \Phi^{-1}\!\left(k_{ijt}+u_{ijt}(1-k_{ijt})\right),
+  \qquad u_{ijt}\sim U(0,1).
+\end{align}
+The random seed is fixed at 123, making the imputed values reproducible. For uncensored records, the fitted response is used directly.
+
+The Tobit approach has two strengths: it incorporates censoring explicitly and yields a compact statistical model. Its central limitation is that the quality of the extrapolated upper tail depends on linearity, homoskedasticity, normality, and correct specification of the censoring interval. A single conditional Gaussian distribution may not represent nonlinear wage profiles or complex interactions among worker, employer, and career variables. The exploratory extended Tobit specification developed during the project is not included in this thesis because it remained unstable and was not sufficiently validated.
+
+\section{XGBoost Wage Prediction}
+\label{sec:xgboost}
+
+\subsection{Gradient-Boosted Regression Trees}
+XGBoost estimates the log LZ wage directly by combining many regression trees. The prediction from an ensemble of $M$ trees is
+\begin{equation}
+  \widehat y_i=\sum_{m=1}^{M} f_m(X_i),
+  \qquad f_m\in\mathcal{F},
+\end{equation}
+where $\mathcal{F}$ is the set of admissible regression trees. Trees are added sequentially. At each iteration, the new tree is chosen to reduce the residual loss left by the existing ensemble. With the squared-error objective used here, observations with larger residuals receive stronger corrective pressure.
+
+The training objective combines fit and model complexity,
+\begin{equation}
+  \mathcal{L}=\sum_{i=1}^{n}(y_i-\widehat y_i)^2
+  +\sum_{m=1}^{M}\Omega(f_m),
+\end{equation}
+where $\Omega(\cdot)$ penalises overly complex trees. Shrinkage, row subsampling, column subsampling, depth restrictions, and $L_1$ and $L_2$ penalties further regularise the ensemble. Compared with the linear Tobit equation, boosted trees can represent thresholds, nonlinear age profiles, and interactions such as different wage histories by censoring status without including each functional form manually.
+
+XGBoost does not model censoring through a likelihood in this implementation. Instead, it learns the relationship between observable BG-side information and the uncensored LZ target in the matched sample. Its ability to de-censor therefore comes from supervised examples for which both sources are observed.
+
+\subsection{XGBoost V1 and V4 Feature Sets}
+XGBoost V1 uses the same restricted covariate set as Tobit V1. This comparison isolates the effect of replacing the parametric Gaussian wage equation with a flexible tree ensemble while holding the available information broadly constant. V1 includes age, leave-one-out worker wage and censoring histories, sampled employer-year size variables, and leave-one-out coworker wage and censoring summaries.
+
+XGBoost V4 is the preferred extended specification. It retains all V1 variables and adds the observed BG interval bounds, censoring status, experience, tenure, demographics, education, employment category, labour-market transitions, entry variables, observed career length, family-history indicators, calendar year, region, and industry. The two interval variables are especially informative: the lower bound carries the observed BG wage, while the upper bound incorporates the statutory ceiling for censored records. These variables do not reveal the LZ target, but they summarise the location and width of the wage information available from the BG system.
+
+The distinction between V1 and V4 is useful for interpretation. If V4 outperforms V1, the improvement may arise from both the broader information set and the model's ability to exploit interactions within it. The separate interval-bound ablation reported later assesses how much of the gain depends specifically on the strongest BG-derived predictors.
+
+\subsection{Training and Hyperparameters}
+Both XGBoost specifications use the \texttt{reg:squarederror} objective and RMSE as the internal evaluation metric. The learning rate is 0.1, maximum tree depth is six, minimum child weight is one, row subsampling is 0.8, and column subsampling per tree is 0.8. The $L_1$ penalty is 0.1 and the $L_2$ penalty is one. These settings are held fixed across V1 and V4 so that the comparison is not driven by specification-specific tuning.
+
+The number of boosting rounds is selected using five-fold cross-validation with a maximum of 1,000 rounds and early stopping after 50 rounds without improvement. The final model is then re-estimated on the relevant full training sample using the selected number of rounds. Seed 123 controls the cross-validation and training randomness. Missing and non-finite feature values are set to zero before construction of the numeric matrix. XGBoost's internal split logic then determines whether this value is informative; however, zero replacement is not equivalent to a dedicated missing-value strategy and is discussed as a limitation.
+
+For the main benchmark, cross-validation selects the number of trees but the reported predictions are produced for the same common sample on which the final ensemble is trained. Those numbers are therefore explicitly labelled in-sample. For temporal validation, all cross-validation and model fitting occur within 1994--2011, and predictions for 2012 are generated only after the model has been fixed.
+
+The computation is implemented in R using \texttt{xgboost}, \texttt{survival}, \texttt{dplyr}, \texttt{data.table}, and related data-processing packages. Model estimation and person-level processing take place on the protected MACH high-performance cluster. Aggregate outputs are written to CSV files and used to produce the LaTeX tables in this thesis.
+
+\section{Model Interpretation with SHAP}
+\label{sec:shap}
+SHAP is used to interpret the preferred XGBoost V4 model. For an observation $i$, the prediction is decomposed as
+\begin{equation}
+  \widehat y_i=\phi_0+\sum_{j=1}^{p}\phi_{ij},
+\end{equation}
+where $\phi_0$ is the expected model prediction and $\phi_{ij}$ is the SHAP contribution of feature $j$. A positive contribution moves the predicted log wage above the baseline; a negative contribution moves it below.
+
+Two summaries are reported. The SHAP summary plot displays the distribution of feature contributions across observations and colours points by the relative feature value. This reveals both the magnitude and, where coding is interpretable, the direction of the association learned by the model. Global importance is measured by
+\begin{equation}
+  I_j=\frac{1}{n}\sum_{i=1}^{n}|\phi_{ij}|,
+\end{equation}
+the mean absolute SHAP value. It ranks variables by their average contribution magnitude, regardless of direction.
+
+SHAP values explain the fitted prediction function, not the data-generating process. A large value does not mean that changing the variable would causally change wages. Attribution can also be shared or redistributed when predictors are correlated, as is likely for the BG wage, interval bounds, worker wage history, age, and experience. The SHAP results are therefore used to describe model reliance rather than causal effects.
+
+\chapter{Evaluation Design}
+\label{ch:evaluation}
+
+\section{Main In-Sample Benchmark}
+The first evaluation estimates each model on the common BG--LZ sample and compares its fitted values with LZ wages on that same sample. This design answers a benchmark question: how closely can the alternative methods reproduce observed LZ wages when all methods have access to the common estimation sample? It is useful for comparison with the classical Tobit-style correction, which is conventionally applied to the estimation data rather than framed as a forecasting model.
+
+The design does not provide independent evidence of generalisation. XGBoost can adapt more closely to the training observations than a restricted parametric model, and selecting the number of rounds by cross-validation does not turn fitted values from the final full-sample model into out-of-sample predictions. The main results are therefore described as fit or benchmark accuracy. Claims about predictive validity rely primarily on the temporal holdout.
+
+\section{Temporal Validation}
+The temporal validation trains all estimated models on observations from 1994--2011 and evaluates them on 2012. The training sample contains 974,234 observations, including 70,413 censored observations. The holdout contains 61,922 observations, of which 4,550 are censored. The same feature definitions, XGBoost hyperparameters, and evaluation metrics are used as in the main analysis.
+
+A temporal split is more demanding than a random row split. It prevents a model from learning directly from any 2012 target and tests whether relationships estimated from earlier years remain useful when contribution ceilings, wage distributions, workforce composition, and macroeconomic conditions have moved forward in time. It also resembles the practical task of applying a correction estimated on an historical overlap period to a later period.
+
+The exercise is still not a universal test of external validity. It uses one holdout year and the same linked administrative system. A favourable 2012 result supports temporal transportability over this horizon, but it does not establish performance in substantially later years, under different institutional rules, or for workers outside the linked sample.
+
+\section{Evaluation Metrics}
+\label{sec:metrics}
+
+\subsection{Log-Wage Errors}
+Let $e_i=\widehat y_i-y_i$ be the error in log daily-wage units. The principal measures are
+\begin{align}
+  \RMSE_{\log} &= \sqrt{\frac{1}{n}\sum_{i=1}^{n}e_i^2},\\
+  \MAE_{\log} &= \frac{1}{n}\sum_{i=1}^{n}|e_i|.
+\end{align}
+RMSE gives greater weight to large mistakes, whereas MAE describes the average absolute deviation. The mean error is also reported to show systematic overprediction or underprediction.
+
+A log error is multiplicative because
+\begin{equation}
+  e_i=\log(\widehat w_i)-\log(w_i)
+      =\log\!\left(\frac{\widehat w_i}{w_i}\right).
+\end{equation}
+Thus $\exp(e_i)$ is the predicted-to-true wage ratio for an individual observation. Applying $\exp(\RMSE_{\log})-1$ gives a rough percentage-style error factor, but it is not an exact average percentage error and it is not a euro amount.
+
+\subsection{Daily-Wage-Level Errors}
+For practical interpretation, the log predictions are exponentiated and compared with real LZ daily wages. The wage-level metrics are
+\begin{align}
+  \RMSE_{w} &= \sqrt{\frac{1}{n}\sum_{i=1}^{n}(\widehat w_i-w_i)^2},\\
+  \MAE_{w} &= \frac{1}{n}\sum_{i=1}^{n}|\widehat w_i-w_i|,\\
+  \operatorname{MedAE}_{w} &= \operatorname{median}_{i}|\widehat w_i-w_i|.
+\end{align}
+These quantities are expressed as price-adjusted daily wages in year-2000 euros. MAE and median absolute error have a direct practical interpretation: the average or typical absolute number of euros per day by which the prediction differs from LZ.
+
+Wage-level RMSE is especially sensitive to a small number of extremely high LZ wages because errors are squared after exponentiation. A model can therefore improve the bulk of censored predictions and substantially reduce MAE while producing only a small change in wage-level RMSE. The three measures are reported together to avoid basing conclusions on a single aspect of the error distribution.
+
+The direct transformation $\widehat w_i=\exp(\widehat y_i)$ predicts a conditional geometric quantity and does not apply a smearing correction for retransformation bias. Because all estimated methods are evaluated using the same implemented transformation, the comparisons remain internally consistent, but the level predictions should not automatically be interpreted as unbiased conditional means.
+
+\section{Comparison Groups}
+Every main table reports three groups. ``All observations'' describes aggregate performance in the common sample. ``Censored observations'' contains records for which the BG top-coding rule binds and is the primary group for answering the research question. ``Uncensored observations'' provides a safeguard against a model that improves the upper tail at the cost of introducing error where BG already contains reliable wage information.
+
+Because only 7.23\% of observations are censored, the all-observation metric is numerically dominated by the uncensored group. The preferred de-censoring method is therefore not selected solely by its overall RMSE. It must show a clear improvement among censored observations and an acceptable trade-off below the ceiling.
+
+\chapter{Results}
+\label{ch:results}
+
+This chapter presents the empirical results from the reproducible 250,000-person seed-123 draw. The subsample was required by the memory and runtime demands of constructing long administrative histories and estimating several models on the protected high-performance cluster. As explained in \cref{ch:data}, 250,000 is the number of persons sampled at the start of the builder; the reported common comparison contains more than one million person-year observations after the panel is constructed. Seed 123 was fixed before model comparison solely to make sampling and estimation reproducible. The reported rankings were not selected by searching across seeds, and all numerical claims in this chapter refer to this one internally consistent run.
+
+\section{Sample Overview and Wage Distributions}
+The composition in \cref{tab:insample-sample-composition} immediately shows why performance must be separated by censoring status. Only 7.23\% of observations are censored, yet their true wages are much higher: the censored group's mean LZ daily wage is 190.20 euros, compared with 62.51 euros among uncensored observations. An overall error measure can therefore look favourable even if a method does little to recover the missing upper tail.
+
+\input{overleaf_data/tables/insample_sample_composition.tex}
+
+\Cref{fig:insample-wage-density-all} compares the fitted log-wage distributions with the LZ distribution. Across all observations, Tobit and both XGBoost curves overlap much of the central LZ mass because uncensored observations dominate the sample. The uncorrected BG distribution is also similar over much of this range, but it displays a pronounced concentration near the ceiling and falls away sharply above it. This is the distributional signature of top-coding: many distinct upper-tail LZ wages are represented by a narrow range of BG values.
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/insample_predicted_wage_density_all.png}
+  {In-sample distributions of true Lohnzettel log daily wages and model predictions for all observations.}
+  {fig:insample-wage-density-all}
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/insample_predicted_wage_density_censored.png}
+  {In-sample distributions of true Lohnzettel log daily wages and model predictions for censored observations.}
+  {fig:insample-wage-density-censored}
+
+Restricting the figure to censored observations makes the challenge clearer. The LZ distribution remains dispersed and has a long right tail. All three model-based predictions restore variation beyond the BG ceiling, but none reproduces every extreme wage. XGBoost V4 follows the central mass more closely and produces a more concentrated error distribution than the restricted XGBoost and Tobit specifications. The numerical comparisons below determine whether this visual improvement also appears in observation-level accuracy.
+
+\section{Main In-Sample Benchmark}
+The main benchmark compares BG, Tobit V1, XGBoost V1, and XGBoost V4 on the common sample. These are fitted-sample results. They show how closely each method can reconstruct the linked LZ outcomes when estimated using the available overlap data, but they should not be interpreted as independent forecasting performance.
+
+\subsection{Log-Wage Accuracy}
+
+\input{overleaf_data/tables/insample_log_errors.tex}
+
+\Cref{tab:insample-log-errors} shows that XGBoost V4 has the lowest log RMSE and MAE in all three panels. For all observations, its RMSE of 0.2129 is 25.5\% below the BG benchmark of 0.2859. XGBoost V1 records an RMSE of 0.3025 and Tobit V1 an RMSE of 0.3523, so increasing model flexibility without the richer V4 information set is not sufficient to beat BG overall.
+
+The censored panel provides the most relevant comparison. BG has an RMSE of 0.5737 and a mean error of $-0.3274$, confirming systematic underprediction once the ceiling binds. Tobit V1 reduces RMSE to 0.4998 and removes most of the average bias, while XGBoost V1 reduces it further to 0.3986. XGBoost V4 achieves 0.3038, a 47.0\% reduction relative to BG and a 39.2\% reduction relative to Tobit V1. Its mean error is approximately zero in sample.
+
+Among uncensored observations, XGBoost V4 also has the smallest RMSE, at 0.2041, but the difference in MAE relative to BG is small: 0.0592 compared with 0.0601. This is an early indication that the practical value of V4 is concentrated in the censored tail rather than in replacing BG for every worker.
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/insample_error_density_censored.png}
+  {In-sample distributions of log daily-wage prediction errors for censored observations. Errors are defined as predicted minus true Lohnzettel log daily wage.}
+  {fig:insample-error-density-censored}
+
+The censored-sample error densities in \cref{fig:insample-error-density-censored} are consistent with the table. XGBoost V4 produces the narrowest distribution around zero. XGBoost V1 and Tobit V1 have visibly wider tails, meaning that their approximately centred average errors conceal more large observation-level mistakes. The figure also illustrates why reporting only mean error would be misleading: a model can be unbiased on average while remaining imprecise.
+
+\subsection{Daily-Wage-Level Accuracy}
+
+\input{overleaf_data/tables/insample_wage_level_errors.tex}
+
+The level results in \cref{tab:insample-wage-level-errors} give the errors a direct daily-wage interpretation. For all observations, XGBoost V4 has the lowest RMSE (134.27 euros) and MAE (7.34 euros). The BG baseline nevertheless has the lowest median absolute error, at only 0.58 euros. This combination is possible because BG is extremely accurate for a large share of uncensored records but makes very large errors in the upper tail.
+
+For censored observations, the ranking is unambiguous. XGBoost V4 reduces wage-level RMSE from 289.07 euros for BG to 168.84 euros, a reduction of 41.6\%. Its MAE is 36.76 euros, compared with 71.12 for BG, 60.76 for Tobit V1, and 47.43 for XGBoost V1. The median absolute error falls from 41.19 euros for BG to 19.75 euros. The mean error of $-12.31$ euros shows that V4 still underpredicts the censored group in levels, but much less severely than the $-66.74$-euro BG baseline.
+
+For uncensored observations, XGBoost V4 has a slightly lower RMSE than BG, but BG has the lowest MAE and median absolute error. The preferred interpretation is therefore not that XGBoost should mechanically replace every observed contribution-base wage. Its main value lies in recovering information when the contribution ceiling has removed it.
+
+\section{Temporal Validation Results}
+The temporal analysis re-estimates the models using only 1994--2011 and evaluates the fixed predictions on 2012. The holdout contains 61,922 observations, including 4,550 censored observations. Because the LZ targets in 2012 are not used for estimation or selection of boosting rounds, these results provide the main evidence about predictive generalisation.
+
+\subsection{2012 Prediction Distributions}
+
+\Cref{fig:temporal-test-wage-density-all,fig:temporal-test-wage-density-censored} show that the institutional censoring pattern remains visible in 2012. The BG distribution has a sharp spike near the threshold, especially within the censored group, while LZ continues into the upper tail. The three corrected predictions restore dispersion above the spike. XGBoost V4 tracks the main body of the censored LZ distribution more closely than V1, although the holdout distributions are less tightly aligned than in sample. This visual deterioration is expected when the model is applied to a later year and motivates the formal error comparison.
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/temporal_test_predicted_wage_density_all.png}
+  {Distributions of true Lohnzettel log daily wages and predictions from models trained on 1994--2011 and evaluated on all 2012 observations.}
+  {fig:temporal-test-wage-density-all}
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/temporal_test_predicted_wage_density_censored.png}
+  {Distributions of true Lohnzettel log daily wages and predictions from models trained on 1994--2011 and evaluated on censored 2012 observations.}
+  {fig:temporal-test-wage-density-censored}
+
+\subsection{2012 Log-Wage Accuracy}
+
+\input{overleaf_data/tables/temporal_test_log_errors.tex}
+
+XGBoost V4 remains the best model by holdout log RMSE. Across all 2012 observations, its RMSE is 0.2714, 12.9\% below BG's 0.3116. Tobit V1 and XGBoost V1 have RMSEs of 0.3962 and 0.3875, respectively. XGBoost V4 also has the lowest overall MAE, although its advantage over BG is more modest than its advantage in RMSE.
+
+For the 4,550 censored holdout observations, XGBoost V4 records an RMSE of 0.4702. This is 23.5\% below the BG baseline of 0.6146 and 12.8\% below Tobit V1's 0.5391. XGBoost V1 has an RMSE of 0.5645 and therefore performs worse than Tobit V1 in this genuinely out-of-sample comparison, despite outperforming it in sample. The richer V4 specification is consequently important not only for fit but also for temporal transfer.
+
+All estimated methods underpredict the censored 2012 wages on average. The mean error is $-0.0904$ for XGBoost V4, compared with $-0.1985$ for XGBoost V1 and $-0.0578$ for Tobit V1. Tobit is therefore slightly less biased in the mean, but its wider error distribution produces a higher RMSE and MAE. \Cref{fig:temporal-test-error-density-censored} displays this distinction: the V4 density is most concentrated, whereas the alternative methods have more mass in the tails.
+
+For uncensored observations, XGBoost V4 has the lowest RMSE, but BG has the lowest MAE. This reproduces the in-sample conclusion that the observed contribution base remains an excellent typical wage measure when it is not capped.
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/temporal_test_error_density_censored.png}
+  {Distributions of log daily-wage prediction errors for censored observations in the 2012 holdout. Errors are defined as predicted minus true Lohnzettel log daily wage.}
+  {fig:temporal-test-error-density-censored}
+
+\subsection{2012 Daily-Wage-Level Accuracy}
+
+\input{overleaf_data/tables/temporal_test_wage_level_errors.tex}
+
+The wage-level comparison is more conservative. Across all 2012 observations, XGBoost V4 lowers RMSE from 100.87 euros for BG to 98.91 euros and lowers MAE from 8.06 to 6.76 euros. Within the censored group, V4 has the smallest RMSE at 332.70 euros, but the reduction relative to BG's 340.68 euros is only 2.3\%. Tobit V1 and XGBoost V1 are also close by this metric, with RMSEs of 335.16 and 337.23 euros.
+
+The MAE and median absolute error reveal a more substantial practical improvement. XGBoost V4's censored-sample MAE is 47.70 euros per day, 35.2\% below BG's 73.57 and 20.0\% below Tobit V1's 59.63. Its median absolute error is 20.41 euros, compared with 42.07 for BG and 29.74 for Tobit. The small RMSE gain alongside the large MAE gain indicates that a limited number of extreme wage-level errors dominate the squared-error measure. The evidence therefore supports V4 for the typical censored observation, while also showing that prediction of the most extreme wages remains difficult.
+
+Among uncensored observations, BG has the lowest RMSE, MAE, and median absolute error in levels. XGBoost V4 is close in RMSE but not superior in typical absolute error. Any operational de-censoring procedure should consequently consider retaining BG for clearly uncensored records and applying the model specifically where the ceiling binds.
+
+\subsection{Training-to-Test Generalisation}
+\Cref{tab:temporal-censored-train-test} compares training and holdout errors for censored observations. The XGBoost models have larger generalisation gaps than the benchmarks. XGBoost V4's log RMSE rises from 0.2981 in training to 0.4702 in 2012, an increase of approximately 57.7\%. Its wage-level RMSE more than doubles, from 161.32 to 332.70 euros. XGBoost V1 exhibits a similar, though slightly smaller, log-RMSE gap. By comparison, the BG and Tobit log RMSEs increase by less because these methods are less flexible and already fit the training data less closely.
+
+The gap prevents the in-sample advantage from being interpreted as a pure gain in generalisable prediction. At the same time, it does not overturn the holdout ranking: XGBoost V4 still has the lowest 2012 log RMSE, wage-level RMSE, wage-level MAE, and median absolute error within the censored group. The evidence is therefore best described as meaningful but attenuated generalisation. The model transfers useful relationships to 2012, but its exceptionally strong in-sample performance overstates the size of the improvement that should be expected in a later year.
+
+\section{SHAP and Feature Importance}
+\Cref{fig:insample-shap-summary,fig:insample-shap-importance} show that XGBoost V4 relies predominantly on the BG-derived interval information. The lower interval bound has a mean absolute SHAP value of 0.3110, followed by the upper bound at 0.0948. The next variables are much smaller: the worker's historical mean wage has 0.0174, the worker's mean censoring share 0.0157, the live-birth indicator 0.0101, age 0.0091, number of children 0.0083, and industry 0.0069.
+
+The summary plot provides a clear directional pattern for the interval bounds. Higher values generally make positive contributions to the predicted log wage, while lower values make negative contributions. This is economically intuitive: the observed BG wage and the relevant ceiling locate the worker within the wage distribution. Historical mean wage and censoring frequency add information about whether a worker persistently appears near the upper tail.
+
+The dominance of the interval variables has two interpretations. Positively, it shows that V4 uses the most direct wage information available at the time of imputation. It is not producing upper-tail wages mainly from weak demographic proxies. More cautiously, it means that much of the gain is linked to a small set of mechanically constructed BG variables. The ablation exercise below therefore removes both interval bounds and measures how much predictive information remains.
+
+Some lower-ranked features, including childbirth, number of children, region, and industry, receive non-zero SHAP values. These contributions should not be interpreted as structural wage effects. They may proxy career histories, occupational sorting, or correlated information, and several are represented by administrative codes rather than economically ordered scales. SHAP describes the fitted model's use of these variables; it does not identify causal effects.
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/insample_shap_summary_xgb_v4.png}
+  {SHAP summary plot for the in-sample XGBoost V4 model. Horizontal position measures the contribution to the predicted log daily wage, while colour represents the feature value.}
+  {fig:insample-shap-summary}
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/insample_shap_importance_xgb_v4.png}
+  {Global feature importance for the in-sample XGBoost V4 model, measured by mean absolute SHAP values.}
+  {fig:insample-shap-importance}
+
+\section{Robustness and Diagnostic Checks}
+Three checks address different threats to the main interpretation. First, a censored-only random split assigns entire persons, rather than individual rows, to training and test samples. This prevents observations from the same worker appearing on both sides of the split. The training sample contains 60,422 censored observations and the test sample 14,541. In the worker-level test sample, XGBoost V4 has a log RMSE of 0.4486, compared with 0.4599 for XGBoost V1 and 0.5803 for BG. Its wage-level RMSE is 180.27 euros and its MAE is 48.16 euros, again below V1 (183.16 and 50.51) and BG (194.98 and 69.65). The improvement over V1 is smaller than in sample, but the result shows that V4's advantage is not solely produced by observing other years of the same test workers during training.
+
+Second, XGBoost V4 is re-estimated without \texttt{interval\_lower} and \texttt{interval\_upper}. In the censored in-sample comparison, log RMSE rises from 0.3038 to 0.3310 and wage-level RMSE rises from 168.84 to 212.43 euros. The interval variables therefore account for an important part of V4's performance. Nevertheless, the ablated model still improves on XGBoost V1's log RMSE of 0.3986 and the BG baseline of 0.5737. The broader employment and wage-history information has predictive value beyond the direct interval encoding.
+
+Third, sample-construction diagnostics confirm that the results originate from the corrected Version 3 pipeline. Intermediate files are sample-specific, employer-year keys are deduplicated before the establishment merge, and the final modelling key contains no duplicates. The 1,036,156 observations reported in the thesis reconcile across the in-sample table and the temporal split: 974,234 training observations plus 61,922 holdout observations. This check is important because outputs from the earlier broken pipeline were implausibly optimistic and are not valid robustness evidence.
+
+Runtime information is reported in \cref{app:computation} as computational documentation. A shorter runtime is useful operationally but does not constitute evidence that a statistical model is more accurate or credible.
+
+\chapter{Discussion}
+\label{ch:discussion}
+
+\section{Interpretation of the Main Findings}
+The results support a qualified affirmative answer to the research question. XGBoost V4 recovers top-coded wages more accurately than both the uncorrected BG value and Tobit V1 in the common in-sample comparison. More importantly, it retains the best error ranking among censored observations in the 2012 temporal holdout. The improvement is strongest in log-wage RMSE, MAE, and median absolute daily-wage error. It is much smaller for holdout wage-level RMSE because a few extreme values dominate squared euro errors.
+
+The distinction between benchmark fit and validation changes the strength of the conclusion. In sample, XGBoost V4 cuts censored log RMSE almost in half relative to BG. In 2012, the reduction is approximately one quarter. The temporal result demonstrates that the model has learned relationships that transfer beyond the estimation years, but the sizeable training-to-test gap also shows that the fitted-sample advantage is not a realistic estimate of future performance.
+
+Tobit V1 improves substantially on BG within the censored group, particularly by removing the large average underprediction. This confirms the value of modelling censoring explicitly. Its Gaussian linear structure, however, produces wider observation-level error distributions than XGBoost V4. XGBoost V1 shows that algorithmic flexibility alone is not enough: without the extended V4 predictors, it performs poorly relative to V4 and even falls behind Tobit V1 in the temporal censored comparison.
+
+The evidence for uncensored observations points in a different direction. BG has extremely small median and mean absolute errors in levels and is difficult to improve upon. The economic problem is therefore localised: the contribution base is a useful wage measure until the ceiling binds, after which a dedicated correction becomes valuable.
+
+\section{Practical Implications}
+For empirical applications, the results favour a targeted rather than universal correction. When an observation is clearly uncensored, retaining the BG wage preserves a direct administrative measure that is highly accurate for the typical record. When the top-coding indicator binds, XGBoost V4 provides a better estimate of the missing upper-tail variation. Such a hybrid rule would align the correction with the location of the actual information loss.
+
+Improved upper-tail wages could be useful in descriptive work on wage inequality, mobility, returns to worker characteristics, or firm wage policies. However, a predicted wage introduces model uncertainty. Downstream analyses should therefore distinguish observed and imputed values, document the imputation model, and test whether substantive conclusions are robust to alternative corrections. Where feasible, multiple imputation or prediction intervals would better reflect uncertainty than treating a single point prediction as observed data.
+
+The level-error results also caution against evaluating an imputation method solely by RMSE in euros. For censored 2012 observations, the preferred model materially improves the average and median prediction while barely changing RMSE because of extreme outcomes. Researchers interested in typical worker-level accuracy should report MAE or median absolute error alongside RMSE; researchers focused specifically on the far upper tail may require a loss function or model designed for tail behaviour.
+
+\section{Limitations}
+Several limitations qualify the findings. First, the main benchmark is in sample. Five-fold cross-validation selects the number of boosting rounds, but the final in-sample predictions still come from a model estimated on the same outcomes. Temporal validation reduces this concern, yet it covers only one holdout year. Performance may differ in later periods or after institutional and labour-market changes.
+
+Second, the analysis uses an initial sample of 250,000 persons rather than the full population. Sample construction then selects workers aged 20--60 with eligible employment histories, a stable-career requirement, firm information, and a successful BG--LZ match. The results therefore apply to this common comparison population. Workers without LZ matches or outside the retained employment categories may differ systematically. Employer size and coworker variables are also calculated within the sample rather than from a complete employer workforce.
+
+Third, LZ is an uncensored benchmark but not a perfect observation of the latent BG wage. The sources differ in administrative purpose, covered payments, and the construction of daily wages. Very high LZ values strongly influence wage-level RMSE and may include genuine extreme earnings as well as measurement anomalies. Directly exponentiating predicted log wages also omits a retransformation correction.
+
+Fourth, model choices remain consequential. Hyperparameters other than the number of rounds are fixed rather than selected through nested temporal tuning. Missing and non-finite predictor values are replaced with zero, and several categorical codes enter as numeric variables. Alternative encodings, explicit missing-value treatment, group-aware cross-validation, or tail-weighted objectives could change the results. The random upper-tail draw in Tobit adds simulation variation even though its seed is fixed.
+
+Fifth, the strongest XGBoost predictors are the BG interval bounds. This is appropriate for prediction when those values are available, but it makes performance dependent on a stable and correctly coded censoring mechanism. The no-interval model remains useful but is less accurate. Finally, neither XGBoost nor SHAP identifies causal effects. Feature importance describes how the model forms predictions in this sample and should not be interpreted as evidence that changing a worker or employer characteristic would cause wages to change.
+
+\chapter{Conclusion}
+\label{ch:conclusion}
+This thesis asked whether top-coded wages in Austrian social-security records can be recovered more accurately with XGBoost than with the observed contribution base and a classical Tobit-style correction. To answer this question, BG employment histories were linked to uncensored Lohnzettel wages for 1994--2012. A corrected Version 3 data pipeline created a common sample of 1,036,156 person-year observations from an initial 250,000-person draw. Tobit V1, a restricted XGBoost V1 model, and an extended XGBoost V4 model were compared against the same LZ daily-wage target.
+
+The main in-sample benchmark shows a large advantage for XGBoost V4 among censored observations. Its log-wage RMSE is 0.3038, compared with 0.5737 for BG and 0.4998 for Tobit V1. The advantage survives a stricter temporal design in which models trained on 1994--2011 predict 2012: V4 obtains a censored log RMSE of 0.4702, compared with 0.6146 for BG and 0.5391 for Tobit. In daily-wage levels, the 2012 RMSE gain is small, but V4 reduces the mean absolute error to 47.70 euros per day from 73.57 for BG and 59.63 for Tobit. It therefore improves the typical censored prediction even though extreme upper-tail observations remain difficult.
+
+The thesis also shows where a correction is not needed. For uncensored observations, the recorded BG wage has very low mean and median absolute errors and is often as good as or better than the model-based alternatives in levels. This supports a targeted application in which observed BG wages are retained below the ceiling and XGBoost predictions are used when censoring removes wage information.
+
+The central contribution is an empirical validation design made possible by matched LZ wages. It compares econometric and machine-learning corrections on common observations, separates fitted-sample comparability from temporal generalisation, and documents model reliance through SHAP and ablation tests. The findings are promising but conditional on the sampled linked population, the single 2012 holdout, the current feature encoding, and LZ as the benchmark.
+
+The most credible next step is to repeat the locked pipeline on the full corrected dataset and extend temporal validation to several rolling holdout years. That exercise should preserve the present separation between observed and imputed wages, report uncertainty in the imputed upper tail, and evaluate whether the conclusions remain stable under alternative categorical encodings and loss functions designed for extreme wages.
+
+% -----------------------------------------------------------------------------
+% Back matter
+% -----------------------------------------------------------------------------
+\appendix
+
+\chapter{Variable Definitions}
+\label{app:variables}
+
+This appendix documents the variables as they enter the current implementation. Administrative code labels should be checked against the official data documentation before final submission, especially for education, employment status, federal state, and industry.
+
+\section{Identifiers, Time, and Outcomes}
+
+\begin{description}
+  \item[\texttt{penr}] Pseudonymised person identifier. It is used for sampling, construction of employment histories, and the worker-level robustness split. It is never used as a model feature.
+  \item[\texttt{benr}] Pseudonymised employer identifier. Together with person and year, it forms the linkage key to LZ. It is not included directly as a feature.
+  \item[\texttt{contryear}] Calendar year. The model analysis uses 1994--2012. Calendar year enters XGBoost V4 to capture common time variation.
+  \item[\texttt{dailywage\_final}] Price-adjusted BG daily contribution-base wage after the spell and duration construction, stored on the natural-log scale. In the comparison file it is also denoted \texttt{bg\_dwage\_log}.
+  \item[\texttt{lz\_dwage\_log}] Natural logarithm of the CPI-adjusted LZ daily wage. This is the XGBoost target and the benchmark outcome for every model.
+  \item[\texttt{lz\_ywage\_log}] Natural logarithm of the CPI-adjusted annual LZ wage. It is retained for diagnostics but is not the principal target.
+  \item[\texttt{censored}] Indicator constructed from the year-specific social-security ceiling and BG wage rules. It equals one for records classified as top-coded.
+\end{description}
+
+\section{V1 Predictors}
+
+Tobit V1 and XGBoost V1 use the same ten predictors.
+
+\begin{description}
+  \item[\texttt{age}] Calendar year minus birth year, restricted to values from 20 through 60.
+  \item[\texttt{mean\_wage}] Worker-level mean BG log daily wage over the analysis observations. When a worker has more than one observation, the current observation is removed algebraically. For a one-observation worker, the available mean is retained and \texttt{oneyear\_dummy} identifies the case.
+  \item[\texttt{mean\_censored}] Worker-level mean censoring indicator, constructed with the same leave-current-observation rule where possible.
+  \item[\texttt{firm\_size}] Number of sampled worker observations in the employer-year cell. It is a within-sample measure and not necessarily the employer's complete workforce.
+  \item[\texttt{firm\_size\_square}] \texttt{firm\_size}$^2/100$, allowing a simple nonlinear size effect in V1.
+  \item[\texttt{oneyear\_dummy}] Indicator that the worker has only one observation in the analysis data used to construct the historical means.
+  \item[\texttt{oneperson\_dummy}] Indicator that the sampled employer-year cell contains only one worker observation.
+  \item[\texttt{smallfirm\_dummy}] Indicator that the sampled employer-year cell contains fewer than ten worker observations.
+  \item[\texttt{mean\_wage\_coworkers}] Employer-year mean BG log daily wage after removing the current observation when the cell contains more than one worker.
+  \item[\texttt{mean\_censored\_coworkers}] Employer-year mean censoring share after removing the current observation when possible.
+\end{description}
+
+\section{Additional XGBoost V4 Predictors}
+
+XGBoost V4 contains all V1 variables and the following additions.
+
+\begin{description}
+  \item[\texttt{interval\_lower}] Lower BG-derived interval value used in the censoring construction. It carries the observed real log BG daily wage and is the most important V4 predictor by mean absolute SHAP value.
+  \item[\texttt{interval\_upper}] Upper interval value. For uncensored records it coincides with the observed value; for censored records it incorporates the applicable real log statutory daily ceiling.
+  \item[\texttt{bg\_censored\_flag}] Copy of the censoring indicator supplied explicitly to XGBoost.
+  \item[\texttt{exper}] Number of preceding person-year observations in the constructed career, capped at 60. It is an administrative-panel experience proxy rather than verified total labour-market experience.
+  \item[\texttt{tenure}] Number of observations for the person with the current employer, capped at 60.
+  \item[\texttt{num\_years}] Number of observations available for the worker in the 1994--2012 analysis panel.
+  \item[\texttt{age\_entry}] Age in the worker's first observed panel year.
+  \item[\texttt{year\_entry}] First calendar year in which the worker appears in the constructed panel.
+  \item[\texttt{return}] Indicator that the current observation follows a gap of more than one calendar year in the person's panel history.
+  \item[\texttt{juj}] Indicator derived from transitions between employment and registered unemployment spells around the job observation.
+  \item[\texttt{frau}] Administrative sex indicator for women.
+  \item[\texttt{stsl\_missing}] Indicator for missing or residual nationality coding.
+  \item[\texttt{austrian\_dummy}] Indicator for Austrian nationality according to the administrative code.
+  \item[\texttt{germany\_dummy}] Indicator for the German nationality codes used in the builder.
+  \item[\texttt{eu\_dummy}] Indicator for the selected non-Austrian, non-German EU nationality codes used in the builder.
+  \item[\texttt{educ\_cat}] Education category. Missing education is coded as zero in the present matrix construction.
+  \item[\texttt{educ\_missing}] Indicator that the underlying education category is missing.
+  \item[\texttt{educ\_imputed}] Indicator supplied by the education data showing whether education was imputed.
+  \item[\texttt{whitecollar\_dummy}] Indicator derived from the white-collar employment category.
+  \item[\texttt{bluecollar\_dummy}] Indicator derived from the blue-collar employment category.
+  \item[\texttt{othercollar\_dummy}] Indicator for retained employment categories that are neither the white-collar nor blue-collar code.
+  \item[\texttt{subcat}] Recoded employment-category variable used by the final model matrix.
+  \item[\texttt{live\_birth\_event}] Indicator that a live-birth qualification event is recorded for the person-year.
+  \item[\texttt{n\_children}] Cumulative number of recorded live-birth events for women; it is set to zero for men in the current construction.
+  \item[\texttt{bundesland}] Federal-state code obtained from the employer-year record.
+  \item[\texttt{nace08\_2}] Two-digit NACE 2008 industry code obtained from the employer-year record. Observations without this field are excluded during sample construction.
+\end{description}
+
+No LZ variable is included in either feature set. The LZ values enter only as outcomes for supervised training and evaluation.
+
+\chapter{Additional Results}
+\label{app:additional-results}
+
+The main chapter prioritises the censored group and the 2012 holdout. This appendix retains complementary distributions, training-sample diagnostics, and detailed feature-importance outputs. They are useful for checking whether the main conclusions depend on selective presentation, but they do not change the hierarchy of evidence established in \cref{ch:results}.
+
+\section{Supplementary In-Sample Results}
+
+\Cref{fig:appendix-insample-wage-density-uncensored} isolates the group for which the contribution ceiling does not bind. The substantial overlap between BG, LZ, and the model predictions explains the low BG median absolute error reported in the main chapter. \Cref{fig:appendix-insample-error-density-all} combines censored and uncensored observations and should be interpreted with the 7.23\% censoring share in mind: the aggregate density is dominated by uncensored records.
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/insample_predicted_wage_density_uncensored.png}
+  {In-sample distributions of true Lohnzettel log daily wages and model predictions for uncensored observations.}
+  {fig:appendix-insample-wage-density-uncensored}
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/insample_error_density_all.png}
+  {In-sample distributions of log daily-wage prediction errors for all observations.}
+  {fig:appendix-insample-error-density-all}
+
+\section{Supplementary Temporal Validation Results}
+
+The supplementary temporal figures separate the uncensored 2012 distribution from the censored training distribution. The uncensored holdout again shows why the BG value is difficult to improve upon for the typical worker. The training figures document the considerably tighter XGBoost V4 fit before the model is transported to 2012. The comparison in \cref{tab:temporal-censored-train-test} makes this generalisation gap explicit and prevents the training curves from being mistaken for validation evidence.
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/temporal_test_predicted_wage_density_uncensored.png}
+  {Distributions of true Lohnzettel log daily wages and model predictions for uncensored observations in the 2012 holdout.}
+  {fig:appendix-temporal-test-wage-density-uncensored}
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/temporal_test_error_density_all.png}
+  {Distributions of log daily-wage prediction errors for all observations in the 2012 holdout.}
+  {fig:appendix-temporal-test-error-density-all}
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/temporal_train_predicted_wage_density_censored.png}
+  {Distributions of true Lohnzettel log daily wages and model predictions for censored observations in the 1994--2011 training sample.}
+  {fig:appendix-temporal-train-wage-density-censored}
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/temporal_train_error_density_censored.png}
+  {Distributions of log daily-wage prediction errors for censored observations in the 1994--2011 training sample.}
+  {fig:appendix-temporal-train-error-density-censored}
+
+\input{overleaf_data/tables/temporal_censored_train_test_comparison.tex}
+
+\section{Supplementary Model-Interpretation Results}
+
+The interaction heatmap in \cref{fig:appendix-insample-shap-interaction} summarises pairwise contribution patterns within XGBoost V4. Large interactions involving the interval bounds are expected because tree ensembles can condition the contribution of historical and demographic variables on a record's position relative to the ceiling. As with the main SHAP results, these are interactions in the prediction function, not causal interactions between economic variables.
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/insample_shap_interaction_xgb_v4.png}
+  {SHAP interaction heatmap for the in-sample XGBoost V4 model.}
+  {fig:appendix-insample-shap-interaction}
+
+\input{overleaf_data/tables/insample_shap_importance.tex}
+
+\chapter{Computational Details}
+\label{app:computation}
+
+The implementation consists of a data-building stage and a modelling stage. The corrected sampled dataset is created by \texttt{01\_build\_pre\_model\_dataset\_Version3\_250k\_seed123.R}. The script draws 250,000 unique person identifiers with seed 123, creates annual employment and BG wage records, joins person and employer characteristics, checks key uniqueness, and saves \texttt{pre\_model\_full\_history\_250k\_seed123.RData}.
+
+The retained model results are generated by \texttt{tobit\_and\_xgboost\_v5\_temporal\_250k\_data\_seed123.R}. This script restricts the analysis to 1994--2012, prepares the LZ target, constructs the common BG--LZ sample, estimates Tobit V1 and XGBoost V1/V4, performs the 1994--2011 versus 2012 temporal split, and runs the censored-only worker-level experiment. It writes the model objects and aggregate error files to \texttt{model\_output\_v5\_temporal\_250k\_data\_seed123}. SHAP values and plots for the saved XGBoost models are produced by \texttt{shap\_from\_xgb\_v5\_seed123.R}. The exploratory extended Tobit path present in development code is not part of the thesis results or generated thesis tables.
+
+The main aggregate sources are \texttt{corrected\_error\_summary\_with\_bg\_baseline\_v5.csv} for in-sample log errors, \texttt{comprehensive\_wage\_level\_error\_v5.csv} for in-sample wage-level errors, and the corresponding \texttt{temporal\_split} files for the training and holdout samples. Three non-finite Tobit V1 predictions are removed from the in-sample summaries and one from the 2012 summary. The affected Tobit statistics are recomputed using finite saved evaluation errors. XGBoost and BG retain the full common samples.
+
+Random seed 123 is used for the person sample, XGBoost cross-validation and training, the Tobit upper-tail draw, SHAP sampling configuration, and the 80/20 censored-only person split. Fixing a common seed makes the current outputs reproducible, although it does not quantify sampling uncertainty. The final research archive should store the output of \texttt{sessionInfo()} from the HPC run so that the exact R and package versions accompany the scripts.
+
+The scripts rely principally on the R packages \texttt{haven}, \texttt{dplyr}, \texttt{tidyr}, \texttt{readr}, \texttt{lubridate}, \texttt{survival}, \texttt{purrr}, \texttt{data.table}, \texttt{stringr}, \texttt{ggplot2}, \texttt{scales}, and \texttt{xgboost}. Heavy computations are executed inside protected jobs on the MACH/Altix environment because the underlying administrative records cannot be moved to a local computer. Only approved aggregate results are exported.
+
+\Cref{tab:model-runtime} reports elapsed time for the retained specifications. In the in-sample stage, Tobit V1 takes less than one minute, compared with approximately 102 minutes for XGBoost V1 and 161 minutes for XGBoost V4. The temporal XGBoost runs take approximately 94 and 152 minutes. These values document the computational cost of the implementation on the specific cluster allocation; they are not portable speed benchmarks.
+
+\input{overleaf_data/tables/model_runtime.tex}
+
+\backmatter
+
+% Add a file called references.bib to the Overleaf project. The bibliography is
+% inserted automatically once that file exists; until then, the scaffold still
+% compiles as a standalone document.
+\IfFileExists{references.bib}{%
+  \bibliographystyle{apalike}
+  \bibliography{references}
+}{%
+  \addcontentsline{toc}{chapter}{References}
+  \begin{thebibliography}{99}
+
+  \bibitem[Chen and Guestrin(2016)]{chen2016}
+  Chen, T. and Guestrin, C. (2016).
+  XGBoost: A scalable tree boosting system.
+  \textit{Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining}, 785--794.
+
+  \bibitem[Dustmann et~al.(2009)Dustmann, Ludsteck, and Schoenberg]{dustmann2009}
+  Dustmann, C., Ludsteck, J., and Schoenberg, U. (2009).
+  Revisiting the German wage structure.
+  \textit{Quarterly Journal of Economics}, 124(2), 843--881.
+
+  \bibitem[Friedman(2001)]{friedman2001}
+  Friedman, J.~H. (2001).
+  Greedy function approximation: A gradient boosting machine.
+  \textit{Annals of Statistics}, 29(5), 1189--1232.
+
+  \bibitem[Gartner(2005)]{gartner2005}
+  Gartner, H. (2005).
+  The imputation of wages above the contribution limit with the German IAB employment sample.
+  \textit{FDZ Methodenreport}, 02/2005, Institute for Employment Research, Nuremberg.
+
+  \bibitem[Lundberg and Lee(2017)]{lundberg2017}
+  Lundberg, S.~M. and Lee, S.-I. (2017).
+  A unified approach to interpreting model predictions.
+  \textit{Advances in Neural Information Processing Systems}, 30.
+
+  \bibitem[Lundberg et~al.(2020)]{lundberg2020}
+  Lundberg, S.~M. et~al. (2020).
+  From local explanations to global understanding with explainable AI for trees.
+  \textit{Nature Machine Intelligence}, 2, 56--67.
+
+  \bibitem[Shapley(1953)]{shapley1953}
+  Shapley, L.~S. (1953).
+  A value for $n$-person games.
+  In H.~W. Kuhn and A.~W. Tucker (eds.), \textit{Contributions to the Theory of Games II}, 307--317. Princeton University Press.
+
+  \bibitem[Tobin(1958)]{tobin1958}
+  Tobin, J. (1958).
+  Estimation of relationships for limited dependent variables.
+  \textit{Econometrica}, 26(1), 24--36.
+
+  \end{thebibliography}
+}
+
+\end{document}

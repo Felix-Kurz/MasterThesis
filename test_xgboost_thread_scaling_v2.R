@@ -1,0 +1,52 @@
+# Run in a separate R session inside the capsule with OMP_NUM_THREADS=60.
+# Sequential 4/8/16/32/60-thread comparison on the previous synthetic workload.
+# This competes with other computations in the capsule while it runs.
+local({
+  thread_counts <- c(4L, 8L, 16L, 32L, 60L)
+  nrounds <- 200L
+  set.seed(123)
+  cat("OMP_NUM_THREADS:", Sys.getenv("OMP_NUM_THREADS"), "\n")
+  cat("Watch this test from a terminal: top -p", Sys.getpid(), "\n")
+
+  x <- matrix(rnorm(200000L * 40L), ncol = 40L)
+  y <- x[, 1] * x[, 2] + sin(x[, 3]) + rnorm(nrow(x), sd = 0.2)
+  results <- data.frame(Threads = integer(), Seconds = numeric(),
+                        Average_CPU_Cores = numeric())
+
+  for (threads in thread_counts) {
+    # Fresh DMatrix per fit; data preparation and matrix creation are not timed.
+    d <- xgboost::xgb.DMatrix(x, label = y)
+    cat("\n=== Training with", threads, "threads ===\n")
+    set.seed(123)
+    elapsed <- system.time({
+      fit <- xgboost::xgb.train(
+        params = list(objective = "reg:squarederror", eval_metric = "rmse",
+                      tree_method = "hist", max_depth = 8L, nthread = threads),
+        data = d, nrounds = nrounds, watchlist = list(train = d),
+        verbose = 1, print_every_n = 10L
+      )
+    })
+    seconds <- elapsed[["elapsed"]]
+    results <- rbind(results, data.frame(
+      Threads = threads,
+      Seconds = seconds,
+      Average_CPU_Cores = if (seconds > 0)
+        round(sum(elapsed[c("user.self", "sys.self")]) / seconds, 1) else NA_real_
+    ))
+    print(elapsed)
+    rm(fit, d)
+    invisible(gc())
+  }
+
+  results$Seconds_Per_Round <- round(results$Seconds / nrounds, 3)
+  baseline_seconds <- results$Seconds[results$Threads == 4L]
+  results$Speedup_vs_4 <- ifelse(results$Seconds > 0,
+                                round(baseline_seconds / results$Seconds, 2), NA_real_)
+  cat("\n=== Thread scaling: identical data, seed, settings and round count ===\n")
+  print(results, row.names = FALSE)
+  fastest <- results[which.min(results$Seconds), ]
+  cat(sprintf("Fastest in this test: %d threads (%.3f seconds).\n",
+              fastest$Threads, fastest$Seconds))
+  cat("Speedup above 1 means faster than 4 threads; below 1 means slower.\n")
+  cat("One run per setting, synthetic data, histogram method; full V6 scaling may differ.\n")
+})

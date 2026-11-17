@@ -21,14 +21,14 @@ Important setup constraint: the full data and heavy computations run on an HPC/A
 
 The workflow has two major parts.
 
-Dataset creation:
+Historical dataset creation scripts:
 
 ```text
 01_build_pre_model_dataset_Version2.R
 01_build_pre_model_dataset_Version3.R
 ```
 
-Modeling/computation:
+Historical modeling scripts:
 
 ```text
 tobit_and_xgboost_v5_250k.R
@@ -36,6 +36,436 @@ tobit_and_xgboost_v5_temporal_250k.R
 ```
 
 The modeling scripts use `pre_model_full_history` plus `lohnzettel` to build a common BG-LZ comparison sample, fit Tobit and XGBoost variants, and compare predictions to LZ daily wages.
+
+The current authoritative seed-123 workflow is:
+
+```text
+Dataset builder:
+  01_build_pre_model_dataset_Version4_v2.R
+
+Modeling:
+  tobit_and_xgboost_v5_temporal_250k_data_seed123_v2.R
+
+Exploratory LZ analysis:
+  analyze_lz_dwage_ywage_v5_for_seed123_v2.R
+
+Finite-Tobit table repair for the completed in-memory run:
+  rebuild_finite_tobit_tables_v5.R
+```
+
+The older Version 2/3 and earlier seed-123 results remain useful historical
+references, but future thesis tables should use the current finite V4v2 result
+folder described below.
+
+## Intended Full-Sample Workflow (Confirmed 2026-09-23)
+
+The full-sample workflow is separate from the authoritative 250k V4v2 results
+described below. When working on the full sample, the intended modeling script
+and its exploratory-analysis companion are:
+
+```text
+Modeling:
+  tobit_and_xgboost_v5_temporal_full_sample.R
+
+Exploratory LZ analysis:
+  analyze_lz_dwage_ywage_v5_for_seed123_v2_full_sample.R
+```
+
+The selected full-sample model is **not**
+`tobit_and_xgboost_v5_full_memory_safe.R`. That file came from an exploratory
+idea in another Codex chat and is not the desired/default path. Future Codex
+instances must not substitute it for `tobit_and_xgboost_v5_temporal_full_sample.R`
+unless the user explicitly asks to revisit the memory-safe alternative.
+
+Both intended full-sample scripts use:
+
+```text
+Pre-model input:
+  pre_model_output_full_v4/
+    pre_model_full_history_full_v4.RData
+
+Lohnzettel input:
+  lohnzettel_dta.RData
+
+Analysis/model window:
+  1994-2012
+
+Model output root:
+  model_output_v5_temporal_full_sample_v4
+```
+
+In `tobit_and_xgboost_v5_temporal_full_sample.R`, the intended setting is:
+
+```r
+use_debug_sample <- FALSE
+```
+
+Therefore the run uses all eligible persons and rows in the 1994-2012 window,
+not a 250k or debug subsample.
+
+Despite retaining `seed123_v2` in its historical filename,
+`analyze_lz_dwage_ywage_v5_for_seed123_v2_full_sample.R` performs no random or
+fixed-size sampling. It rebuilds the full matched BG-LZ comparison sample and
+writes aggregate-only diagnostics to:
+
+```text
+model_output_v5_temporal_full_sample_v4/
+  lz_exploratory_analysis/
+    lz_wage_sample_flow.csv
+    lz_wage_summary_overall.csv
+    lz_wage_summary_by_censor.csv
+    lz_wage_summary_by_year.csv
+    lz_wage_relationship_summary.csv
+```
+
+The diagnostic was rewritten with `data.table`, sequential input loading,
+by-reference transformations, keyed matching, and memory checks because the
+full pre-model file is large. Those implementation safeguards do not make it a
+companion to the rejected `full_memory_safe` model branch; its inputs, sample
+definition, and output location are aligned with the temporal full-sample
+script. The diagnostic currently retains `memory_budget_gib <- 430` and a
+conservative BG-LZ join preflight; these are protective checks inside the
+diagnostic, not a decision to use the memory-safe modeling script. The private
+`.RData` inputs and `Rscript` were unavailable locally, so the rewritten
+diagnostic received static validation but has not been executed locally on the
+full data.
+
+## Current Authoritative Seed-123 V4v2 Workflow (August/September 2026)
+
+### Window-Eligible Person Sampling
+
+`01_build_pre_model_dataset_Version4_v2.R` was created from the more advanced
+dataset-builder branch and changes the sampling frame. Instead of drawing
+persons from the complete historical data and only later restricting years, it
+first identifies persons with at least one HV observation during the actual LZ
+and model period:
+
+```text
+Sampling window: 1994-2012
+Requested persons: 250,000
+Eligible persons in HV sampling frame: 7,643,751
+Seed: 123
+```
+
+After the persons are drawn, all available years for those persons are retained
+so that employment histories, career measures, and lagged variables are not
+truncated. The relevant paths are:
+
+```text
+Script:
+  01_build_pre_model_dataset_Version4_v2.R
+
+BG preparation directory:
+  bg_prep_250k_seed123_hv_1994_2012_v4v2
+
+Pre-model output directory on MACH:
+  pre_model_output_250k_seed123_hv_1994_2012_v4v2
+
+Pre-model file:
+  pre_model_full_history_250k_seed123_hv_1994_2012_v4v2.RData
+
+Dataset-generation transcript copied locally:
+  log_of_250k_pre_mode_dataset_v4.R
+```
+
+Completed dataset-builder output:
+
+```text
+Full-history pre-model rows:             3,366,502
+Full-history persons after filters:        207,275
+Year range retained:                     1978-2020
+Rows in the 1994-2012 analysis window:   1,699,930
+Persons in the 1994-2012 window:           174,514
+Share of sampled persons retained:           69.81%
+Final duplicate penr/benr/year keys:               0
+```
+
+This design was intended to increase the effective LZ-window sample. It did not
+literally double the final matched observations, but it increased them by about
+57% relative to the older seed-123 run while keeping the censoring share almost
+unchanged.
+
+### Current V2 Modeling Script And Scope
+
+The current model script is:
+
+```text
+tobit_and_xgboost_v5_temporal_250k_data_seed123_v2.R
+```
+
+It reads the V4v2 pre-model file and writes to:
+
+```text
+model_output_v5_temporal_250k_data_seed123_hv_1994_2012_v4v2
+```
+
+The retained model scope is intentionally:
+
+```text
+BG baseline
+Tobit V1
+XGBoost V1
+XGBoost V4
+```
+
+Tobit V4 was removed from this script and from the thesis comparison because it
+was an exploratory specification that performed poorly and was not needed for
+the final comparison. Removing it does not alter the other fitted models or
+their evaluation samples.
+
+The script now has explicit checks for required input objects and columns,
+duplicate comparison keys, and non-finite input wages. It also writes
+`sample_flow_v5.csv`.
+
+Completed model sample flow:
+
+```text
+Stage                                           Observations   Persons
+Loaded pre-model full history                     3,366,502    207,275
+Pre-model analysis window 1994-2012               1,699,930    174,514
+Valid LZ rows for selected persons 1994-2012      2,636,640    173,127
+Final matched BG-LZ comparison sample             1,631,405    171,670
+```
+
+The third stage is not a nested subset of the second row count. It collects all
+valid LZ records for the selected persons before the final BG-LZ match, so its
+observation count can be larger.
+
+Comparison with the older predominant seed-123 thesis run:
+
+```text
+Metric                         Older run      V4v2 run      Change
+Final matched observations     1,036,156      1,631,405     +57.45%
+Censored observations             74,963        118,792     +58.47%
+Censored share                     7.235%          7.282%    +0.047 percentage points
+2012 test observations             61,922         97,453     +57.38%
+2012 censored observations          4,550          7,106     +56.18%
+```
+
+Because the sampling frame changed, the old and new results are not paired
+estimates on the same persons. Differences reflect both the larger sample and
+its composition. The V4v2 frame is nevertheless better aligned with the
+1994-2012 thesis estimand.
+
+### Authoritative Finite-Tobit Tables
+
+The completed model run exposed a small numerical edge case in the Tobit
+imputation. The truncated-normal draw uses an expression of the form:
+
+```r
+qnorm(k + runif(length(k)) * (1 - k))
+```
+
+For a few extreme censored cases, the probability evaluates or rounds to
+exactly one, so `qnorm(1)` returns positive infinity. `build_eval_table()`
+correctly carries that value into the row-level error. The reporting problem was
+in `summarise_eval()`: `na.rm = TRUE` removes `NA` but does not remove `Inf`.
+
+The one-off repair script:
+
+```text
+rebuild_finite_tobit_tables_v5.R
+```
+
+was run in the still-open capsule R session, so no models needed to be refit. It
+filters only non-finite Tobit evaluation rows, rebuilds the two affected RMSE
+tables, copies the complete root CSV table set, records the excluded counts,
+and verifies that every saved CSV contains zero infinite values.
+
+Use this as the authoritative table folder:
+
+```text
+model_output_v5_temporal_250k_data_seed123_hv_1994_2012_v4v2/
+  finite_tobit_tables/
+```
+
+Do not use the root-level raw Tobit rows from
+`comprehensive_rmse_comparison_v5.csv` or `temporal_split_rmse_v5.csv` for the
+thesis, because their Tobit aggregates contain `Inf`. Other model rows and
+unaffected CSVs are identical between the original and finite folders.
+
+Recorded non-finite counts:
+
+```text
+Evaluation setting                 Total rows   Positive Inf   Share
+In-sample common comparison         1,631,405          5       0.00031%
+Temporal train 1994-2011            1,533,952          3       0.00020%
+Temporal test 2012                     97,453          3       0.00308%
+```
+
+All non-finite values were positive infinities among censored observations.
+The in-sample, temporal-train, and temporal-test counts refer to separately
+fitted evaluation settings and should not be added as unique observations.
+
+For future full reruns, prevent the edge case upstream by clamping the
+truncated-normal probability strictly below one before calling `qnorm()`. The
+finite-row repair is appropriate for the completed run because the exclusions
+are negligible, transparent, and consistently applied.
+
+### Current V4v2 Results
+
+In-sample censored log-wage errors:
+
+```text
+Method         RMSE     MAE
+XGBoost V4    0.3362   0.1860
+XGBoost V1    0.4178   0.2472
+Tobit V1      0.4980   0.3004
+BG baseline   0.5732   0.3948
+```
+
+Temporal 2012 censored log-wage errors:
+
+```text
+Method         RMSE     MAE     Mean error
+XGBoost V4    0.4538   0.2176    -0.0809
+Tobit V1      0.5101   0.2853    -0.0641
+XGBoost V1    0.5330   0.3255    -0.2005
+BG baseline   0.5890   0.3914    -0.3231
+```
+
+Thus, after correcting the finite Tobit summary, Tobit V1 is second on the
+censored 2012 log metrics: it beats XGBoost V1 and the BG baseline, but XGBoost
+V4 remains clearly best. XGBoost V4 lowers censored-2012 log RMSE by about 23.0%
+relative to BG, almost the same as the 23.5% reduction in the older seed-123
+run.
+
+Temporal 2012 censored wage-level errors in 2000-price daily-wage units:
+
+```text
+Method         Wage RMSE   Wage MAE   Median AE
+XGBoost V4       412.57      51.18       20.61
+Tobit V1         412.65      63.52       31.21
+XGBoost V1       415.21      64.92       35.51
+BG baseline      416.99      77.43       41.65
+```
+
+The XGBoost V4 and Tobit V1 wage-level RMSE values are nearly tied because this
+metric is dominated by a very small extreme upper tail. XGBoost V4 remains much
+better by log RMSE, wage MAE, and median absolute error.
+
+Censored-only person-level test experiment:
+
+```text
+Method         Log RMSE   Log MAE   Wage RMSE   Wage MAE   Median AE
+XGBoost V4       0.4052    0.2298      297.43      48.74      24.90
+XGBoost V1       0.4153    0.2390      305.68      50.24      26.61
+BG baseline      0.5551    0.3917      320.64      71.55      41.65
+```
+
+This experiment splits by person (`penr`), not row, so the same person cannot
+appear in both training and test data. XGBoost V4's log-RMSE advantage over BG
+in the censored-only test increased from about 22.7% in the older run to 27.0%
+in V4v2.
+
+The core thesis conclusion is therefore robust: XGBoost V4 remains the best
+model for censored wages on the primary log scale and by typical wage-level
+errors, and its temporal/censored-only generalisation is at least as strong in
+the enlarged sample.
+
+### Why Wage-Level RMSE Increased
+
+Compared with the older seed-123 sample, the central censored-wage distribution
+hardly moved, while the maximum became much more extreme:
+
+```text
+Censored true daily wage              Older run     V4v2 run
+Median                                   162.60        163.56
+99th percentile                          545.96        563.88
+Maximum                               25,895.88     84,267.82
+Standard deviation                       282.16        414.76
+```
+
+This explains why wage-level RMSE rose by roughly 22-24% for all methods even
+while temporal log RMSE improved and median absolute errors remained stable.
+The correct interpretation is a heavier extreme upper tail, not a reversal of
+the model ranking or a general loss of predictive quality. Always report wage
+MAE and median absolute error alongside wage RMSE.
+
+### Runtime Of The V4v2 Run
+
+Selected runtimes from `model_runtime_v5.csv`:
+
+```text
+Stage                         Model         Minutes
+In-sample benchmark           Tobit V1        0.51
+In-sample benchmark           XGBoost V1    227.99
+In-sample benchmark           XGBoost V4    336.09
+Temporal validation           Tobit V1        0.88
+Temporal validation           XGBoost V1    208.26
+Temporal validation           XGBoost V4    325.37
+Censored-only train/test      XGBoost V1      2.26
+Censored-only train/test      XGBoost V4     17.74
+```
+
+The enlarged sample increased XGBoost runtime more than proportionally. These
+times describe this implementation and MACH environment; they are not portable
+hardware benchmarks.
+
+### Exploratory Diagnostics And Plot Decisions
+
+The current exploratory script is:
+
+```text
+analyze_lz_dwage_ywage_v5_for_seed123_v2.R
+```
+
+It reads the V4v2 sample and writes its aggregate diagnostics into a dedicated
+subfolder so the model-output root remains uncluttered:
+
+```text
+model_output_v5_temporal_250k_data_seed123_hv_1994_2012_v4v2/
+  lz_exploratory_analysis/
+    lz_wage_sample_flow.csv
+    lz_wage_summary_overall.csv
+    lz_wage_summary_by_censor.csv
+    lz_wage_summary_by_year.csv
+    lz_wage_relationship_summary.csv
+```
+
+The V2 modeling script also creates:
+
+```text
+plots/exploratory_wage_density_bg_lz_full.png
+```
+
+This is a model-free exploratory distribution plot of observed BG and true LZ
+log daily wages, using the same colour scheme and density settings as the model
+comparison figures.
+
+For the temporal 2012 censored prediction-density figure, the BG baseline is
+intentionally excluded because the figure's purpose is to compare the true LZ
+distribution with the fitted Tobit and XGBoost predictions. BG remains included
+in the numerical error tables and in the other relevant distributions.
+
+### Finite V2 Overleaf Bundle
+
+One Overleaf-ready LaTeX fragment was created for each of the 11 CSVs in the
+finite-Tobit folder. The complete bundle is:
+
+```text
+overleaf_data/finite_v2/
+  README.md
+  data/      # copied finite source CSVs
+  tables/    # 11 matching .tex fragments
+```
+
+The table fragments match the current thesis conventions (`booktabs`,
+`threeparttable`, panel headings, restrained bolding of within-panel minima,
+and explanatory notes). Their labels are prefixed with `v2-finite` so they do
+not collide with existing labels in `master_thesis.tex`.
+
+The current `master_thesis.tex` was deliberately not changed when this bundle
+was created. Use the `\input{...}` commands and recommended placement listed in:
+
+```text
+overleaf_data/finite_v2/README.md
+```
+
+For the censored-only RMSE and wage-level CSVs, the source contains identical
+`All` and `Censored` rows because every observation in that experiment is
+censored. The LaTeX fragments display each result once and explain the
+duplication in the table note.
 
 ## Important Dataset Finding
 
@@ -243,7 +673,10 @@ When helping with the presentation, prefer drafting slide text, structure, and
 tables/figures that can be copied into the Overleaf project. Do not modify
 `final_pres_v1.tex` unless explicitly asked.
 
-## Main 250k In-Sample Results
+## Historical Main 250k In-Sample Results (Pre-V4v2)
+
+Historical reference only. For the final thesis, use the finite V4v2 tables and
+results documented in the current authoritative section above.
 
 Main result CSV:
 
@@ -372,7 +805,10 @@ exp(rmse_model_a) - exp(rmse_model_b)
 
 That expression is a difference in multiplicative error factors, not a euro amount unless multiplied by a wage level.
 
-## Sunday 2026-06-14 Wage-Level Results
+## Historical: Sunday 2026-06-14 Wage-Level Results
+
+Historical reference only. These results predate the V4v2 sampling frame and
+the finite-Tobit table repair.
 
 New result folder:
 
@@ -509,7 +945,10 @@ to Lohnzettel for uncensored observations, especially by MAE and median absolute
 error. Its RMSE can still look high because a small number of extreme
 `lz_dwage` values dominate squared error.
 
-## Monday 2026-06-15 Seed123 BG Baseline And P90 Diagnostics
+## Historical: Monday 2026-06-15 Seed123 BG Baseline And P90 Diagnostics
+
+This section documents the older seed-123 run used for comparison with V4v2.
+It is not the authoritative source for the final thesis tables.
 
 New seed123 result folder:
 
@@ -660,19 +1099,40 @@ observations.
 The following files were added or edited during recent Codex work:
 
 ```text
+01_build_pre_model_dataset_Version4_v2.R
 analyze_lz_dwage_ywage_v5.R
 analyze_lz_dwage_ywage_v5_for_seed123.R
+analyze_lz_dwage_ywage_v5_for_seed123_v2.R
+analyze_lz_dwage_ywage_v5_for_seed123_v2_full_sample.R
 log_rmse_interpretation_note.md
+rebuild_finite_tobit_tables_v5.R
 tobit_and_xgboost_v5_250k.R
 tobit_and_xgboost_v5_temporal_250k.R
+tobit_and_xgboost_v5_temporal_250k_data_seed123_v2.R
+tobit_and_xgboost_v5_temporal_full_sample.R
+overleaf_data/finite_v2/README.md
 META_PROJECT_INFORMATION.md
 ```
+
+`01_build_pre_model_dataset_Version4_v2.R`:
+Current seed-123 builder. It samples persons from those observed in HV during
+1994-2012, then retains their full histories for feature construction.
 
 `analyze_lz_dwage_ywage_v5.R`:
 Creates diagnostics for raw/log `lz_ywage` and `lz_dwage`, implied days, correlations, and summary statistics. It should only write aggregate CSVs, not row-level private data.
 
 `analyze_lz_dwage_ywage_v5_for_seed123.R`:
 Seed123 version of the Lohnzettel wage diagnostics. It reads `pre_model_full_history_250k_seed123.RData`, writes aggregate diagnostics into `model_output_v5_temporal_250k_data_seed123`, and includes `p90` in the summary tables.
+
+`analyze_lz_dwage_ywage_v5_for_seed123_v2.R`:
+Current exploratory-analysis script for V4v2. It writes the five aggregate CSVs
+to the dedicated `lz_exploratory_analysis` subfolder.
+
+`analyze_lz_dwage_ywage_v5_for_seed123_v2_full_sample.R`:
+Full-sample exploratory companion to
+`tobit_and_xgboost_v5_temporal_full_sample.R`. It uses the full v4 pre-model
+file, applies no person subsampling, and writes the same five aggregate CSVs to
+`model_output_v5_temporal_full_sample_v4/lz_exploratory_analysis`.
 
 `log_rmse_interpretation_note.md`:
 Short note explaining log RMSE, multiplicative interpretation, euro approximation, and model improvement formulas.
@@ -682,6 +1142,27 @@ Main 250k in-sample benchmark script, plus temporal validation additions in Sect
 
 `tobit_and_xgboost_v5_temporal_250k.R`:
 Temporal version of v5. It removes unused `censReg` and `VGAM` imports because the HPC/Altix system cannot install `censReg`.
+
+`tobit_and_xgboost_v5_temporal_250k_data_seed123_v2.R`:
+Current V4v2 modeling script. It fits the BG baseline, Tobit V1, XGBoost V1,
+and XGBoost V4, writes sample-flow diagnostics, adds the model-free BG/LZ
+density plot, and excludes BG from the specific 2012 censored prediction-density
+figure.
+
+`tobit_and_xgboost_v5_temporal_full_sample.R`:
+Intended full-sample modeling script. With `use_debug_sample <- FALSE`, it uses
+the complete eligible population in the 1994-2012 model window and writes to
+`model_output_v5_temporal_full_sample_v4`. Do not replace it with the
+`full_memory_safe` variant unless the user explicitly changes this decision.
+
+`rebuild_finite_tobit_tables_v5.R`:
+One-off in-memory repair script for the completed V4v2 run. It excludes the
+few non-finite Tobit evaluation rows and writes the authoritative finite table
+folder without refitting the models.
+
+`overleaf_data/finite_v2/README.md`:
+Index and placement guide for the 11 Overleaf-ready LaTeX table fragments and
+their copied finite source CSVs.
 
 ## Tobit Implementation
 
@@ -699,7 +1180,11 @@ survival::survreg(
 
 So `survival` is required, but `censReg` is not required for the current code path.
 
-## Temporal Script Outputs
+## Legacy Temporal Script Outputs
+
+This section describes the older `tobit_and_xgboost_v5_temporal_250k.R`
+workflow, which still included Tobit V4. The current V4v2 workflow does not fit
+or report Tobit V4; use the authoritative section above for current outputs.
 
 `tobit_and_xgboost_v5_temporal_250k.R` includes in-sample and temporal validation for:
 
@@ -738,6 +1223,12 @@ Temporal validation:
 ## Practical Guidance For Future Codex Chats
 
 Prefer reading scripts and copied result files locally. Do not expect full private data to exist on the local computer.
+
+For full-sample modeling, use `tobit_and_xgboost_v5_temporal_full_sample.R`
+and its companion diagnostic
+`analyze_lz_dwage_ywage_v5_for_seed123_v2_full_sample.R`. Do not redirect
+full-sample work to `tobit_and_xgboost_v5_full_memory_safe.R` unless the user
+explicitly asks to reconsider that alternative.
 
 Be careful when interpreting old outputs. Results from the broken Version 2 / old 10k pipeline may be too optimistic or distorted.
 
@@ -799,12 +1290,14 @@ PID 1774668  -> 274948.mach -> Capsule-XX
 PID 1780437  -> 274949.mach -> Capsule-XX
 ```
 
-Each `rsession` runs in its own capsule. The maximum capsule size available is 512 GB RAM. If a capsule exceeds its RAM allocation and spills into swap, performance can be badly harmed for other capsules/users on MACH. Therefore, monitor memory at the individual `rsession` / capsule level, not only through global `top` memory totals.
+Each `rsession` runs in its own capsule. The largest standard capsule used in the project was 512 GB RAM. A special 6 TB capsule was later created for the full dataset-generation run; see the dedicated runbook below. If a capsule exceeds its RAM allocation and spills into swap, performance can be badly harmed for other capsules/users on MACH. Therefore, monitor memory at the individual `rsession` / capsule level, not only through global `top` memory totals.
 
 Useful monitoring rule:
 
 ```text
-one rsession PID = one PBS job = one capsule = max 512 GB RAM
+one rsession PID = one PBS job = one capsule
+standard project capsule = max 512 GB RAM
+special full-data capsule = 6,144 GB RAM
 ```
 
 The important memory metric is `RES` for each `rsession`. Typical heavy sessions seen in the transcript used approximately:
@@ -816,7 +1309,7 @@ PID 1780437: RES about 249G
 PID 457120:  RES about 35G
 ```
 
-Practical danger thresholds:
+Practical danger thresholds for the standard 512 GB capsules:
 
 ```text
 < 400G    comfortable
@@ -838,3 +1331,190 @@ end
 ```
 
 For memory monitoring, add `VIRT` and `RES` using `ps -p $pid -o vsz=` and `ps -p $pid -o rss=`. Avoid interpreting `VIRT - RES` as exact swap usage; it is not a reliable per-process swap measure.
+
+### Special 6 TB Full-Data Capsule (July/August 2026)
+
+A custom interactive capsule was created on the Altix UV1000 specifically for the full dataset-generation run. This was a one-off/special allocation, not a normal capsule size.
+
+Recorded allocation:
+
+```text
+PBS job id:        276489.mach
+Job name:          BigDATA_R_6TB
+GNU Screen:        299673.BigDATA
+Requested CPUs:    64
+Requested memory:  6144 GB
+Wall time:         240 hours (10 days)
+Memory topology:   97 vnodes
+Visible cores:     776 across those vnodes
+Initial memory:    6207.250 GB total, 6110.056 GB free, 97.196 GB used
+```
+
+The capsule was submitted manually inside a GNU Screen session with:
+
+```tcsh
+qsub -I -N BigDATA_R_6TB -l select=ncpus=64:mem=6144gb
+```
+
+The 776 cores printed by `meminfo-free-RAM` are physically visible across the selected memory nodes. The PBS request was for 64 CPUs, so code should treat 64 as the allocated CPU count. The main reason for this special capsule is its 6 TB shared-memory allocation.
+
+The job lifetime can be checked without entering the capsule:
+
+```tcsh
+my-walltimes
+```
+
+Do not submit a second `qsub` job merely because no capsule terminal/tab is visible. The manually created capsule does not necessarily create a separately labelled desktop terminal. Do not use `qdel` while the dataset run or RStudio session is needed.
+
+### Reattaching the 6 TB Capsule and Starting RStudio
+
+The successful graphical setup used the existing VNC server:
+
+```text
+VNC address:  mach.edvz.uni-linz.ac.at:5911
+X display:    :11.0
+```
+
+No second VNC port is required. Open a new terminal within this VNC desktop and confirm the display before attaching:
+
+```tcsh
+printenv DISPLAY
+```
+
+Expected output:
+
+```text
+:11.0
+```
+
+The MACH installation has an old GNU Screen version (`4.00.02`) that does not support `screen -Q windows`. The saved session may show as `Attached` even when its terminal is not visible. Useful attachment commands are:
+
+```tcsh
+screen -list
+screen -x 299673.BigDATA
+```
+
+`screen -x` joins an already-attached session. On this old Screen version, multi-display attachment can redraw badly or appear frozen. In that case, open another ordinary terminal and take exclusive control with:
+
+```tcsh
+screen -D -r 299673.BigDATA
+```
+
+An observed `screen -d -r 299673.BigDATA` attempt only detached the remote display and did not reattach locally. If using lowercase `-d`, run detachment and reattachment as two commands:
+
+```tcsh
+screen -d 299673.BigDATA
+screen -r 299673.BigDATA
+```
+
+Screen names are case-sensitive: use `BigDATA`, not `BigData`.
+
+After attachment, the definitive check is the current shell's cpuset:
+
+```tcsh
+cat /proc/$$/cpuset
+```
+
+Correct capsule shell:
+
+```text
+/PBSPro/276489.mach
+```
+
+Wrong/base VNC shell:
+
+```text
+/boot/exploratur
+```
+
+Do not launch the heavy run from `/boot/exploratur`. `printenv STY` can be empty even while the visible terminal is connected through Screen because the interactive PBS shell does not necessarily inherit `STY`; the `/proc/$$/cpuset` result is the authoritative check.
+
+The administrator's manual `qsub` command did not include `-v DISPLAY`. Consequently, launching RStudio initially failed with:
+
+```text
+QXcbConnection: Could not connect to display
+```
+
+From the confirmed `/PBSPro/276489.mach` shell, set the VNC display and memory limit before loading the runtime:
+
+```tcsh
+setenv DISPLAY :11.0
+set max_memory = 6000g
+echo $max_memory
+load.ExecEnv::Xenial_Ubuntu16_04_x86_64
+```
+
+The spaces around `=` are required for the `tcsh` form used here. `set max_memory 6000g` fails with `Variable name must begin with a letter.` The 6000 GB limit leaves some headroom below the 6144 GB PBS allocation.
+
+At the `[Xenial @ mach]:->` prompt, start RStudio with:
+
+```tcsh
+printenv DISPLAY
+rstudio
+```
+
+`printenv DISPLAY` should still return `:11.0`. This successfully launched RStudio 1.1.463 using R 3.6.3 on the 6 TB capsule.
+
+If X11 authorization still fails despite the correct `DISPLAY`, run the following once from an ordinary terminal on the same VNC desktop, then retry `rstudio` inside the capsule:
+
+```tcsh
+xhost +SI:localuser:k232474
+```
+
+Keep the outer PBS capsule shell alive while RStudio or the dataset-generation process is running. Exiting that shell can terminate the interactive allocation.
+
+### Non-Default Historical Alternative: Memory-Safe Full-Sample Script
+
+The completed full pre-model file contains 112,238,803 rows and 8,220,895 persons. The earlier 250k V5 model script must not simply be pointed at that file: it retains several complete data copies, two dense XGBoost matrices, five-fold CV objects, and model result data simultaneously.
+
+The following script was created as an exploratory standard-XXL/512-GB
+alternative:
+
+```text
+tobit_and_xgboost_v5_full_memory_safe.R
+```
+
+It is **not the selected full-sample workflow**. As confirmed on 2026-09-23,
+use `tobit_and_xgboost_v5_temporal_full_sample.R` instead. Keep the information
+below only as historical documentation of the alternative; do not recommend or
+run it by default.
+
+The non-default script's main safeguards are:
+
+- a 430 GiB application-level RSS budget inside the nominal 512 GB capsule;
+- preflight peak estimates before feature construction, the BG-LZ join, Tobit, and every XGBoost fit;
+- by-reference `data.table` feature construction;
+- `tree_method = "hist"`, 16 XGBoost threads, and one dense matrix/model at a time;
+- XGBoost CV on at most 1,000,000 rows, followed by the final fit on the complete applicable training sample;
+- compact model objects without complete data or matrices embedded in them;
+- full-sample numerical results but plots based on at most 250,000 rows;
+- restart checkpoints under `model_output_v5_full_memory_safe/checkpoints`.
+
+Only if the user explicitly decides to revisit this non-default script, the
+associated Xenial/XXL setup used a vector-heap backstop as well as the capsule
+memory setting:
+
+```tcsh
+cat /proc/$$/cpuset
+set max_memory = 470g
+setenv R_MAX_VSIZE 429496729600
+load.ExecEnv::Xenial_Ubuntu16_04_x86_64
+rstudio
+```
+
+`R_MAX_VSIZE=429496729600` is 400 GiB. It limits R's vector heap, not native allocations made by XGBoost, so it is an extra backstop rather than a total-process limit.
+
+For a separate whole-process guard, identify the RStudio R process from another terminal:
+
+```tcsh
+pgrep -u $USER rsession
+cat /proc/PID/cpuset
+```
+
+Confirm that the PID belongs to the current `/PBSPro/JOBID` capsule, then start:
+
+```tcsh
+tcsh watch_capsule_memory.csh PID 460
+```
+
+The watcher checks RSS every two seconds and sends `SIGSTOP` at 460 GiB. To terminate a stopped process cleanly, queue termination and then continue it with `kill -TERM PID; kill -CONT PID`; to resume the calculation, use only `kill -CONT PID`. The PBS/capsule allocation remains the final hard boundary; the 430 GiB script budget and 460 GiB watcher provide operational headroom below it. These limits belong to the non-default memory-safe experiment and must not be treated as the configuration for the selected temporal full-sample workflow.

@@ -1,0 +1,647 @@
+\documentclass[10pt]{beamer}
+
+\usetheme[progressbar=frametitle]{metropolis}
+\usepackage{appendixnumberbeamer}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{xspace}
+\usepackage{verbatim}
+
+\newcommand{\themename}{\textbf{\textsc{metropolis}}\xspace}
+
+\newcommand{\figureplaceholder}[1]{%
+\begin{center}
+\fbox{%
+\begin{minipage}[c][0.55\textheight][c]{0.86\textwidth}
+\centering
+\textit{#1}
+\end{minipage}}
+\end{center}}
+
+\setbeamercolor{background canvas}{bg=white}
+
+\title{De-censoring Top-coded Wages in Austrian Social Security Data}
+\subtitle{Final Master Thesis Presentation}
+\author{Felix Kurz \\Supervisors:
+Rudolf Winter-Ebmer $\And$ Wolfgang Frimmel}
+\date{\today}
+
+\begin{document}
+
+\frame{\titlepage}
+
+%--------------------------------------------------
+\begin{frame}{Motivation}
+Administrative data are central to empirical labor economics, which relies heavily on wage information.
+
+\vspace{0.3cm}
+Main advantages:
+\begin{itemize}
+    \item very large samples,
+    \item reliable earnings records,
+    \item long worker-firm histories.
+\end{itemize}
+
+\vspace{0.3cm}
+Main limitation:
+\begin{itemize}
+    \item social security wage records are top-coded for high earners in Austria,
+    \item observed contribution bases then differ from true wages.
+\end{itemize}
+
+\vspace{0.3cm}
+This creates a measurement problem for analyses using social security contribution bases as wages.
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Why Does Censoring Matter?}
+Ignoring top-coding can distort the wage distribution and any analysis based on it.
+
+\vspace{0.3cm}
+The problem is concentrated in the upper tail, but the consequences can affect:
+\begin{itemize}
+    \item wage inequality,
+    \item worker and firm wage premia,
+    \item mobility and sorting analyses,
+    \item any model that uses wages as an outcome or explanatory variable.
+\end{itemize}
+
+\vspace{0.3cm}
+The following illustrations show how censoring affects the observed wage distribution.
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Illustration: Assumed Wage Distribution}
+\centering
+\includegraphics[width=0.85\textwidth]{iniPres/Plot_1.png}
+
+\vspace{0.3cm}
+Assume wages follow a standard normal distribution.
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Illustration: The Top 10 Percent}
+\centering
+\includegraphics[width=0.85\textwidth]{iniPres/Plot_2.png}
+
+\vspace{0.3cm}
+The highest 10 percent of wages are affected by top-coding.
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Illustration: What Censoring Does}
+\centering
+\includegraphics[width=0.85\textwidth]{iniPres/Plot_3.png}
+
+\vspace{0.3cm}
+All values above the ceiling are collapsed onto a single point.
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Illustration: The Resulting Data}
+\centering
+\includegraphics[width=0.85\textwidth]{iniPres/Plot_4.png}
+
+\vspace{0.3cm}
+In practice, this creates a visible pile-up at the censoring threshold.
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Research Question}
+\begin{center}
+Can top-coded wages in Austrian administrative data be recovered more accurately than with a classical Tobit-type correction model?
+\end{center}
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Contribution}
+This thesis makes three contributions:
+\begin{enumerate}
+    \item It adapts a Tobit-style wage imputation approach to Austrian administrative data.
+    \item It trains XGBoost models as flexible supervised alternatives.
+    \item It evaluates both approaches against matched Lohnzettel wages, which provide an uncensored benchmark.
+\end{enumerate}
+
+\vspace{0.3cm}
+It also uses model interpretation tools to examine which information drives the machine-learning predictions.
+\end{frame}
+
+\begin{comment}
+  %--------------------------------------------------
+\begin{frame}{Literature Benchmark}
+The thesis builds on two related strands of literature.
+
+\vspace{0.3cm}
+\begin{itemize}
+    \item \textbf{Card, Heining \& Kline (2013):} wage inequality using linked employer--employee data with top-coded wages.
+    \item \textbf{Gartner (2005):} Tobit-based imputation of wages above the social security contribution limit.
+\end{itemize}
+
+\vspace{0.3cm}
+Their role in this thesis:
+\begin{itemize}
+    \item Tobit imputation provides the classical econometric baseline.
+    \item Matched Lohnzettel data allow direct validation against uncensored wages.
+\end{itemize}
+\end{frame}  
+\end{comment}
+
+
+%--------------------------------------------------
+\begin{frame}{Administrative Data}
+The empirical baseline is a rich Austrian social-security administration dataset.
+
+\vspace{0.3cm}
+It combines information on:
+\begin{itemize}
+    \item contribution bases and employment spells,
+    \item worker demographics,
+    \item job and employment histories,
+    \item firm characteristics such as region, industry, and size.
+\end{itemize}
+
+\vspace{0.3cm}
+The model datasets used in the analysis are derived from this common administrative data environment. They are not separate data sources.
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Lohnzettel Data}
+The key empirical advantage is the availability of matched \textbf{Lohnzettel (LZ)} wages.
+
+\vspace{0.3cm}
+LZ data provide:
+\begin{itemize}
+    \item an uncensored wage measure,
+    \item matched worker-firm-year observations,
+    \item a training target and evaluation benchmark for BG-based predictions.
+\end{itemize}
+
+\vspace{0.3cm}
+The main target in the analysis is the log of daily Lohnzettel wages, CPI-adjusted to 2000 euros.
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Empirical Design}
+The final analysis compares five prediction approaches:
+
+\vspace{0.2cm}
+\begin{itemize}
+    \item BG baseline,
+    \item Tobit V1: standard Card/Gartner-style specification,
+    \item Tobit V4: extended Tobit specification,
+    \item XGBoost V1: standard feature set,
+    \item XGBoost V4: extended feature set including interval information.
+\end{itemize}
+
+\vspace{0.3cm}
+Current main dataset version:
+\begin{itemize}
+    \item seed 123 sample with interval bounds,
+    \item 1,036,156 matched BG-LZ observations,
+    \item 74,963 censored observations (7.23 percent).
+\end{itemize}
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Evaluation Strategy}
+The evaluation separates two questions.
+
+\vspace{0.3cm}
+\textbf{1. Main benchmark}
+\begin{itemize}
+    \item in-sample common BG-LZ comparison sample,
+    \item same benchmark logic as the classical Tobit correction.
+\end{itemize}
+
+\vspace{0.3cm}
+\textbf{2. Predictive validation}
+\begin{itemize}
+    \item temporal split,
+    \item train: 1994--2011,
+    \item test: 2012.
+\end{itemize}
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Methodology I: Tobit Imputation}
+The econometric baseline follows a Tobit-type interval regression.
+
+\vspace{0.2cm}
+\textbf{Model:}
+\[
+\ln w_{it}^{*} = \mathbf{x}_{it}' \boldsymbol{\beta} + \varepsilon_{it}, \quad \varepsilon_{it} \sim N(0, \sigma^2)
+\]
+
+For censored observations, the true wage is only known to lie in an interval.
+
+\vspace{0.2cm}
+\textbf{Covariates} $\mathbf{x}_{it}$:
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\begin{itemize}
+    \item age
+    \item leave-one-out mean wage
+    \item leave-one-out censoring share
+    \item firm size, firm size$^2$
+\end{itemize}
+\end{column}
+\begin{column}{0.48\textwidth}
+\begin{itemize}
+    \item coworker mean wage
+    \item coworker censoring share
+    \item one-year, one-person, small-firm dummies
+\end{itemize}
+\end{column}
+\end{columns}
+
+\vspace{0.2cm}
+Estimated separately by gender and age group, year by year.
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Methodology II: XGBoost Setup}
+The machine-learning alternative uses gradient-boosted regression trees.
+
+\vspace{0.2cm}
+\textbf{Target:} LZ daily wage (log, CPI-adjusted to 2000 euros).
+
+\vspace{0.2cm}
+\textbf{Features are derived from BG/admin data only:}
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\begin{itemize}
+    \item Tobit covariates
+    \item gender, birth year
+    \item number of observed years
+    \item censoring flag
+\end{itemize}
+\end{column}
+\begin{column}{0.48\textwidth}
+\begin{itemize}
+    \item interval bounds
+    \item year
+    \item federal state
+    \item nationality proxy
+\end{itemize}
+\end{column}
+\end{columns}
+
+\vspace{0.2cm}
+The goal is to learn the mapping from censored BG information to uncensored LZ wages.
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{XGBoost \cite{xgboost}}
+XGBoost is an ensemble of $K$ regression trees trained by gradient boosting:
+\[
+\hat{y}_i^{(m)} = \hat{y}_i^{(m-1)} + f_m(\mathbf{x}_i), \quad f_m \in \mathcal{F}
+\]
+
+\vspace{0.2cm}
+The training objective combines predictive loss and model complexity:
+\[
+\mathcal{L}=\sum_{i=1}^n l(\hat y_i, y_i)+\sum_{k=1}^K\Omega(f_k),
+\quad
+\Omega(f) = \gamma T + \frac{1}{2}\lambda\|\mathbf{w}\|^2
+\]
+
+\vspace{0.2cm}
+\begin{itemize}
+    \item $T$ is the number of leaves in a tree.
+    \item $\mathbf{w}$ are the leaf weights.
+    \item $\gamma$ penalizes additional splits.
+    \item $\lambda$ penalizes large leaf weights.
+\end{itemize}
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Evaluation Criteria}
+The main reported metrics are based on prediction errors relative to LZ wages.
+
+\vspace{0.3cm}
+\textbf{Log wage errors:}
+\[
+e_i = \widehat{\log w_i} - \log w_i
+\]
+\[
+RMSE = \sqrt{\frac{1}{n}\sum_i e_i^2}, \quad
+MAE = \frac{1}{n}\sum_i |e_i|
+\]
+
+\vspace{0.3cm}
+\textbf{Daily-wage-level errors:}
+\begin{itemize}
+    \item convert predictions back using $\exp(\widehat{\log w_i})$,
+    \item report wage-level RMSE, MAE, and median absolute error.
+\end{itemize}
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{SHAP \cite{shap}}
+SHAP decomposes an individual prediction into feature contributions.
+
+\vspace{0.2cm}
+Shapley value for covariate $j$ at observation $i$:
+\[
+\phi_j^{(i)} =
+\sum_{S \subseteq \mathcal{M} \setminus \{j\}}
+\frac{s!\,(p-s-1)!}{p!}
+\left[ f(S \cup \{j\}) - f(S) \right]
+\]
+
+\vspace{0.2cm}
+\begin{itemize}
+    \item $S$ is a subset of covariates without $j$.
+    \item $f(S)$ is the prediction using the covariate set $S$.
+    \item $f(S \cup \{j\})$ is the prediction after adding covariate $j$.
+\end{itemize}
+
+\vspace{0.2cm}
+Individual prediction:
+\[
+\hat{y}_i = \phi_0 + \sum_{j=1}^p \phi_j^{(i)}
+\]
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Results Overview}
+The results section is organized in three parts.
+
+\vspace{0.3cm}
+\begin{enumerate}
+    \item \textbf{In-sample benchmark:} direct comparison to the classical Tobit setting.
+    \item \textbf{Temporal validation:} training on 1994--2011 and testing on 2012.
+    \item \textbf{Model interpretation:} SHAP and XGBoost feature importance.
+\end{enumerate}
+
+\vspace{0.3cm}
+For each performance chapter, the focus is on censored observations because that is where de-censoring matters.
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{In-Sample: Predicted Wage Distributions}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{iniPres/predicted_wage_density_full_all.png}
+    \caption{All observations, seed 123 sample with interval information.}
+    \label{fig:placeholder}
+\end{figure}
+\vspace{0.1cm}
+\centering
+
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{In-Sample: Error Densities}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{iniPres/error_density_censored.png}
+    \caption{Censored observations, log wage prediction errors.}
+    \label{fig:placeholder}
+\end{figure}
+\vspace{0.1cm}
+\centering
+
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{In-Sample: Log RMSE}
+\centering
+\scriptsize
+\begin{tabular}{lrrr}
+\toprule
+Method & All & Censored & Uncensored \\
+\midrule
+XGBoost V4 & 0.2129 & 0.3038 & 0.2041 \\
+BG Baseline & 0.2859 & 0.5737 & 0.2500 \\
+XGBoost V1 & 0.3025 & 0.3986 & 0.2937 \\
+Tobit V1 & 0.3523 & 0.4998 & 0.3381 \\
+Tobit V4 & 0.3672 & 1.0336 & 0.2487 \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.35cm}
+\begin{itemize}
+    \item XGBoost V4 has the lowest RMSE overall and for censored observations.
+    \item The BG baseline performs well for uncensored wages but misses the upper tail.
+    \item Tobit V1 values use the corrected summary after filtering non-finite predictions.
+\end{itemize}
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{In-Sample: Daily-Wage-Level Errors}
+\centering
+\scriptsize
+\begin{tabular}{lrrr}
+\toprule
+Method & Wage RMSE & Wage MAE & Median AE \\
+\midrule
+XGBoost V4 & 168.84 & 36.76 & 19.75 \\
+XGBoost V1 & 231.71 & 47.43 & 26.68 \\
+Tobit V1 & 283.55 & 60.76 & 34.28 \\
+BG Baseline & 289.07 & 71.12 & 41.19 \\
+Tobit V4 & 369.47 & 255.59 & 263.85 \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.35cm}
+\small
+Censored observations only. Errors are in daily-wage units after transforming log predictions back with $\exp(\cdot)$.
+\end{frame}
+
+
+
+%--------------------------------------------------
+\begin{frame}{Interpreting RMSE}
+Log RMSE and wage-level RMSE answer related but different questions.
+
+\vspace{0.3cm}
+\begin{itemize}
+    \item Log errors are multiplicative: $\log(\hat{w})-\log(w)=\log(\hat{w}/w)$.
+    \item Wage-level errors are measured in daily-wage units.
+    \item Wage-level RMSE is very sensitive to a small number of extremely high wages.
+\end{itemize}
+
+\vspace{0.3cm}
+Therefore, wage-level MAE and median absolute error are important complementary measures when evaluating censored high-wage observations.
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Temporal Split: Predicted Wage Distributions}
+\figureplaceholder{Insert plot: 2012 temporal-test predicted wage densities of BG baseline, Tobit, XGBoost, and LZ true wages, this is way more interesting than looking at more or less the same insample just for 1992 to 2011, oder was meint ihr? (und ja die plots sind grad noch in arbeit)}
+
+\vspace{0.1cm}
+\centering
+\small Train: 1994 - 2011. Test: 2012.
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Temporal Split: Error Densities}
+\figureplaceholder{Insert plot: 2012 temporal-test error densities by model relative to LZ true wages, wieder das selbe wie beim plot oben}
+
+\vspace{0.1cm}
+\centering
+\small Train: 1994 - 2011. Test: 2012.
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Temporal Split: Log RMSE}
+\centering
+\scriptsize
+\begin{tabular}{lrrr}
+\toprule
+Method & All & Censored & Uncensored \\
+\midrule
+XGBoost V4 & 0.2714 & 0.4702 & 0.2490 \\
+BG Baseline & 0.3116 & 0.6146 & 0.2736 \\
+XGBoost V1 & 0.3875 & 0.5645 & 0.3699 \\
+Tobit V4 & 0.3879 & 1.0690 & 0.2638 \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.35cm}
+\begin{itemize}
+    \item XGBoost V4 remains the strongest model in the 2012 holdout.
+    \item The improvement is largest for censored observations.
+    \item Tobit V1 produced non-finite raw log predictions and is shown on the wage-level slide.
+\end{itemize}
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Temporal Split: Daily-Wage-Level Errors}
+\centering
+\scriptsize
+\begin{tabular}{lrrr}
+\toprule
+Method & Wage RMSE & Wage MAE & Median AE \\
+\midrule
+XGBoost V4 & 332.70 & 47.70 & 20.41 \\
+Tobit V1 & 335.16 & 59.63 & 29.74 \\
+XGBoost V1 & 337.23 & 61.36 & 35.14 \\
+BG Baseline & 340.68 & 73.57 & 42.07 \\
+Tobit V4 & 421.21 & 266.12 & 274.09 \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.35cm}
+\small
+2012 test set, censored observations only. XGBoost V4 reduces average absolute daily-wage error relative to both the BG baseline and Tobit V1.
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{SHAP: Feature Contributions}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{iniPres/shap_summary_xgb_v4_in_sample_v5_sample.png}
+    \caption{How features drive the XGBoost predictions.}
+    \label{fig:placeholder}
+\end{figure}
+\vspace{0.1cm}
+\centering
+
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{XGBoost Feature Importance}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{iniPres/shap_importance_bar_xgb_v4_in_sample_v5_sample.png}
+    \caption{SHAP importance}
+    \label{fig:placeholder}
+\end{figure}
+\vspace{0.1cm}
+\centering
+
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Conclusion}
+\begin{itemize}
+    \item Top-coding creates a clear measurement problem in the upper tail of Austrian social-security wages.
+    \item Lohnzettel data make it possible to train and evaluate de-censoring models against uncensored wages.
+    \item XGBoost V4 improves prediction accuracy especially for censored observations.
+    \item The BG baseline remains very strong for uncensored observations, but it cannot recover wages above the contribution ceiling.
+    \item Wage-level RMSE should be interpreted together with MAE and median absolute error because of extreme high-wage observations.
+\end{itemize}
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Fin}
+    Thank you for your attention
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{References}
+\footnotesize
+\begin{thebibliography}{99}
+\bibitem{card2013}
+Card, D., Heining, J., \& Kline, P. (2013).
+Workplace heterogeneity and the rise of West German wage inequality.
+\emph{Quarterly Journal of Economics}, 128(3), 967--1015.
+
+\bibitem{gartner2005}
+Gartner, H. (2005).
+\emph{The imputation of wages above the contribution limit with the German IAB employment sample}.
+FDZ Methodenreport, 2/2005.
+
+\bibitem{xgboost}
+Chen, T., \& Guestrin, C. (2016).
+XGBoost: A scalable tree boosting system.
+\emph{Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining}.
+
+\bibitem{shap}
+Lundberg, S. M., \& Lee, S.-I. (2017).
+A unified approach to interpreting model predictions.
+\emph{Advances in Neural Information Processing Systems}.
+\end{thebibliography}
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{In-Sample: Log RMSE (V2)}
+\centering
+\tiny
+\begin{tabular}{llrrrrrr}
+\toprule
+Type & Method & $n$ & Mean & Median & SD & MAE & RMSE \\
+\midrule
+All & XGBoost V4 & 1,036,156 & 0.0000 & -0.0100 & 0.2129 & 0.0676 & 0.2129 \\
+All & BG Baseline & 1,036,156 & -0.0075 & -0.0027 & 0.2858 & 0.0843 & 0.2859 \\
+All & XGBoost V1 & 1,036,156 & 0.0000 & -0.0173 & 0.3025 & 0.1489 & 0.3025 \\
+All & Tobit V1 & 1,036,153 & 0.0262 & 0.0013 & 0.3514 & 0.1999 & 0.3523 \\
+All & Tobit V4 & 1,027,234 & 0.0828 & -0.0012 & 0.3577 & 0.1236 & 0.3672 \\
+\midrule
+Censored & XGBoost V4 & 74,963 & 0.0001 & 0.0222 & 0.3038 & 0.1763 & 0.3038 \\
+Censored & XGBoost V1 & 74,963 & -0.0585 & -0.0394 & 0.3942 & 0.2390 & 0.3986 \\
+Censored & Tobit V1 & 74,960 & -0.0059 & -0.0075 & 0.4998 & 0.2999 & 0.4998 \\
+Censored & BG Baseline & 74,963 & -0.3274 & -0.2802 & 0.4711 & 0.3937 & 0.5737 \\
+Censored & Tobit V4 & 74,493 & 0.9219 & 0.9697 & 0.4674 & 0.9375 & 1.0336 \\
+\midrule
+Uncensored & XGBoost V4 & 961,193 & 0.0000 & -0.0104 & 0.2041 & 0.0592 & 0.2041 \\
+Uncensored & Tobit V4 & 952,741 & 0.0172 & -0.0026 & 0.2481 & 0.0599 & 0.2487 \\
+Uncensored & BG Baseline & 961,193 & 0.0175 & -0.0026 & 0.2493 & 0.0601 & 0.2500 \\
+Uncensored & XGBoost V1 & 961,193 & 0.0046 & -0.0169 & 0.2937 & 0.1419 & 0.2937 \\
+Uncensored & Tobit V1 & 961,193 & 0.0287 & 0.0017 & 0.3369 & 0.1921 & 0.3381 \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.2cm}
+\small
+Corrected in-sample log-error summary, seed 123 sample with interval information.
+
+Lieber v1 oder v2 Folie?
+\end{frame}
+
+
+
+
+
+
+
+
+\end{document}

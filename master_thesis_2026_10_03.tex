@@ -1,0 +1,486 @@
+\documentclass[12pt,a4paper,oneside,titlepage]{book}
+
+% -----------------------------------------------------------------------------
+% Master thesis scaffold
+% Upload this file to Overleaf as the project's main document.
+% The file compiles on its own; figures and references can be added later.
+% -----------------------------------------------------------------------------
+
+% Language and typography
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{setspace}
+
+% Page layout
+\usepackage[
+  a4paper,
+  left=32mm,
+  right=25mm,
+  top=28mm,
+  bottom=28mm,
+  headheight=15pt
+]{geometry}
+
+% Mathematics, tables, and figures
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{threeparttable}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage{subcaption}
+\usepackage{xcolor}
+
+% References and navigation
+\usepackage[round,authoryear]{natbib}
+\usepackage[hidelinks]{hyperref}
+\usepackage[nameinlink,noabbrev]{cleveref}
+
+% Headers and footers
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\nouppercase{\leftmark}}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancypagestyle{plain}{%
+  \fancyhf{}
+  \fancyfoot[C]{\thepage}
+  \renewcommand{\headrulewidth}{0pt}
+}
+
+% General document settings
+\onehalfspacing
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.6em}
+\graphicspath{{figures/}{overleaf_data/figures/}}
+
+% Useful mathematical operators
+\DeclareMathOperator{\E}{E}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\RMSE}{RMSE}
+\DeclareMathOperator{\MAE}{MAE}
+
+% Draft notes are visible while \thesisdrafttrue is active. Change this to
+% \thesisdraftfalse before submitting the thesis.
+\newif\ifthesisdraft
+\thesisdrafttrue
+\newcommand{\draftnote}[1]{%
+  \ifthesisdraft
+    \par\noindent\colorbox{yellow!20}{%
+      \parbox{0.94\textwidth}{\textbf{Draft note:} #1}%
+    }\par
+  \fi
+}
+
+% Figure helper. While an image is missing, a labelled placeholder is shown.
+% Example:
+% \thesisfigure[0.85\textwidth]{my_plot.png}{My caption}{fig:my-plot}
+\newcommand{\thesisfigure}[4][0.85\textwidth]{%
+  \begin{figure}[H]
+    \centering
+    \IfFileExists{#2}{%
+      \includegraphics[width=#1]{#2}%
+    }{%
+      \fbox{%
+        \parbox[c][45mm][c]{0.85\textwidth}{%
+          \centering Missing figure: \texttt{\detokenize{#2}}%
+        }%
+      }%
+    }
+    \caption{#3}
+    \label{#4}
+  \end{figure}
+}
+
+% Thesis metadata: edit these fields first.
+\newcommand{\thesistitle}{De-censoring Top-coded Wages in Austrian Social Security Data}
+\newcommand{\thesisauthor}{Felix Kurz}
+\newcommand{\thesistype}{Master's Thesis}
+\newcommand{\degreeprogramme}{Analytic Methods}
+\newcommand{\university}{JKU Department of Economics}
+\newcommand{\supervisors}{Rudolf Winter-Ebmer and Wolfgang Frimmel}
+\newcommand{\submissiondate}{\today}
+
+\hypersetup{
+  pdftitle={\thesistitle},
+  pdfauthor={\thesisauthor}
+}
+
+\begin{document}
+
+% -----------------------------------------------------------------------------
+% Front matter
+% -----------------------------------------------------------------------------
+\frontmatter
+
+\begin{titlepage}
+  \centering
+  \vspace*{18mm}
+
+  {\Large \university\par}
+  \vspace{24mm}
+
+  {\Huge\bfseries \thesistitle\par}
+  \vspace{16mm}
+
+  {\Large \thesistype\par}
+  \vspace{6mm}
+
+  {\large \degreeprogramme\par}
+
+  \vfill
+
+  \begin{tabular}{@{}ll@{}}
+    Author: & \thesisauthor \\
+    Supervisors: & \supervisors \\
+    Submission date: & \submissiondate
+  \end{tabular}
+
+  \vspace*{12mm}
+\end{titlepage}
+
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+\draftnote{Write a concise summary of the motivation, data, empirical strategy, main results, and contribution. Add keywords at the end.}
+
+\chapter*{Zusammenfassung}
+\addcontentsline{toc}{chapter}{Zusammenfassung}
+\draftnote{Add the German-language abstract if required by the degree programme. Remove this page if it is not required.}
+
+\chapter*{Acknowledgements}
+\addcontentsline{toc}{chapter}{Acknowledgements}
+\draftnote{Optional. Remove this page if no acknowledgements are needed.}
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+% -----------------------------------------------------------------------------
+% Main matter
+% -----------------------------------------------------------------------------
+\mainmatter
+
+\chapter{Introduction}
+\label{ch:introduction}
+
+\section{Motivation}
+\draftnote{Explain why high-quality wage measures matter in empirical labour economics and why legal contribution ceilings create top-coding in social-security data.}
+
+\section{Institutional Setting and the Censoring Problem}
+\draftnote{Introduce the Austrian setting and the difference between observed BG wages and uncensored Lohnzettel wages. Keep detailed data construction for \cref{ch:data}.}
+
+\section{Research Question}
+\draftnote{State one primary research question and, if useful, a small number of testable subquestions. Distinguish de-censoring from general wage forecasting.}
+
+\section{Related Literature}
+\draftnote{Position the thesis in the literature on top-coded earnings, Tobit/Card-style correction methods, machine-learning wage prediction, and interpretable machine learning.}
+
+\section{Contribution}
+\draftnote{Emphasise the use of uncensored Lohnzettel wages as the supervised-learning target and evaluation benchmark, the comparison with the classical Tobit approach, and the temporal validation exercise.}
+
+\section{Structure of the Thesis}
+\draftnote{Give a short roadmap of the remaining chapters.}
+
+\chapter{Data and Sample Construction}
+\label{ch:data}
+
+\section{Austrian Social-Security Data (BG)}
+\draftnote{Describe coverage, unit of observation, wage measurement, legal contribution ceilings, worker and job characteristics, and the historical period used.}
+
+\section{Lohnzettel Data (LZ)}
+\draftnote{Explain that LZ provides uncensored wage information, supplies the model target, and serves as the evaluation benchmark. Define annual and daily LZ wages carefully.}
+
+\section{Data Linkage and Common Comparison Sample}
+\draftnote{Document linkage keys, eligibility restrictions, the 1994--2012 period, duplicate handling, missing-value rules, and the final common BG--LZ comparison sample. Base this chapter on the corrected Version 3 data pipeline.}
+
+\section{Outcome and Predictor Variables}
+\draftnote{Define the log daily-wage target and group predictors by worker characteristics, current employment, wage history, and establishment characteristics. Distinguish the Tobit V1 specification from the XGBoost V1 and V4 feature sets.}
+
+\section{Censoring Status and Descriptive Statistics}
+\draftnote{Report sample sizes, the censored share, wage distributions, and key differences between censored and uncensored observations. Use only aggregate outputs.}
+
+
+
+\chapter{Empirical Methods}
+\label{ch:methods}
+This chapter goes into detail on the problem which arises when predicting censored / topcoded wages, the observeable contribution basis and the approaches used to impute the unobserved wages. Further SHAP as the explainable AI method used to make the black box machine learning model more understandable is explored.
+
+\section{Prediction Problem}
+To make the concept of the prediction problem easier to grasp we introduce an uncapped social contribution basis meassure. Therefore let $w^{BG,*}_{ijt}$ denote the uncapped wage meassure underlying the observed contribution base and let $c_t$ denote the topcoding ceiling for a given year $t$. This then defines the observed social contribution basis BG wage as
+\begin{equation}
+  w^{BG}_{ijt}=\min\{w^{BG,*}_{ijt},c_t\}.
+  \label{eq:topcoding}
+\end{equation}
+It has to be noted that the administrative construction also depends on employment duration and special-payment rules in combination with the fact that having multiple employments per year and firm is possible. This complicates said construction and sometimes results in the dismissal of certain "duplicate" observations, the omittion of is made based on certain pre defined parameters. So \cref{eq:topcoding} is a conceptual simplification rather than the complete representation of reality.
+
+Based on the uncensored Lohnzettel data obtained from the finance ministry a prediction target $y_{ijt}=\log(w^{LZ}_{ijt})$ is introduced. The target which is imputed by the generally available data in the predictor vector $X_{ijt}$ which contains the BG data. This defines the predicted / imputed wage as
+\begin{equation}
+  \widehat y_{ijt}=f(X_{ijt};\widehat\theta),
+\end{equation}
+where $f(\cdot)$ is either the legacy Tobit-style imputation approach or a XGBoost model which is introduced in this thesis. The Performance of all the models was evaluted in a number of ways, but in general always boils down to the error defined as $e_{ijt}=\widehat y_{ijt}-y_{ijt}$.
+
+Based on the elaborated cuircumstances above, the formulation deliberately separates the target which is based on the highly restriced Lohnzettel data from the observed BG wages by the social security administration.
+
+\section{Observed BG Wage as a Baseline}
+
+The idea of using the BG wage as a baseline came up after we acknowledged that there will inevitably always be some deviation between the per year per person uncensored LZ wage and the censored BG wage. Therefore we introduce BG Baseline as a comparison measure for the later models when predicting the log LZ daily wage as
+\begin{equation}
+  \widehat y^{BG}_{ijt}=\log(w^{BG}_{ijt}).
+\end{equation}
+This serves as an informative baseline. Below the ceiling, BG and LZ measure
+closely related wage information and often agree to within a small amount, therefore the BG baseline can be interpreted as a meassure of noise. Above the ceiling the BG baseline represents the distance of an observation to the topcoding threshold, or as in the analysis tables the difference of the mean wage of the censored group above the cutoff from the social security contribution base. 
+For censored observations, the expected error of the baseline is negtive, the implied prediction is close to the threshold, while the LZ observations lie in the upper tail of the distribution, meaning that BG underpredicts LZ. 
+
+\section{Tobit-Style Wage Imputation}
+\label{sec:tobit}
+
+The Tobit Model serves as the legacy benchmark, as it provides the classical econometric correction. For example it was used by $Card, Heining \space \And \space Kline (2013)$ to study the rise of wage inequality in West Germany using linked employer–employee data from the IAB.
+
+\subsection{Standard V1 Specification}
+\draftnote{Present the classical Card-style specification and its assumptions. Document the interval-censored Gaussian model estimated with \texttt{survival::survreg}.}
+
+
+\section{XGBoost Wage Prediction}
+\label{sec:xgboost}
+
+\subsection{Gradient-Boosted Regression Trees}
+\draftnote{Explain the prediction function, loss, regularisation, and sequential tree construction at the level needed for the thesis.}
+
+\subsection{XGBoost V1 and V4 Feature Sets}
+\draftnote{Explain the restricted V1 and richer V4 predictor sets. Clearly exclude LZ-derived information from predictors and explain which wage-history and employment variables distinguish XGBoost V4.}
+
+\subsection{Training and Hyperparameters}
+\draftnote{Document the objective, hyperparameters, missing-value handling, random seed, software, and computational environment.}
+
+\section{Model Interpretation with SHAP}
+\label{sec:shap}
+\draftnote{Introduce Shapley values and SHAP, distinguish local from global interpretation, and explain the summary and importance plots used later.}
+
+\chapter{Evaluation Design}
+\label{ch:evaluation}
+
+\section{Main In-Sample Benchmark}
+\draftnote{Explain that the common-sample in-sample comparison places Tobit and XGBoost on the same footing as the classical benchmark. Do not present it as out-of-sample forecasting evidence.}
+
+\section{Temporal Validation}
+\draftnote{Define the temporal split: train on 1994--2011 and evaluate on the 2012 holdout. Explain what this exercise adds to the in-sample benchmark.}
+
+\section{Evaluation Metrics}
+\label{sec:metrics}
+
+\subsection{Log-Wage Errors}
+\draftnote{Define log RMSE and log MAE. Explain that log errors are multiplicative and are not direct euro errors.}
+
+\subsection{Daily-Wage-Level Errors}
+\draftnote{Define wage-level RMSE, MAE, and median absolute error after exponentiating predictions. Explain the sensitivity of wage-level RMSE to extreme high wages.}
+
+\section{Comparison Groups}
+\draftnote{Report all, censored, and uncensored observations separately. The censored group is central for judging de-censoring performance.}
+
+\chapter{Results}
+\label{ch:results}
+
+This chapter presents the empirical results which were generated from a reproducible subsample draw of 250,000 unique persons. The subsample was required by the memory and runtime constraints of constructing the administrative histories and estimating several models on the high-performance cluster. As explained in chapter 2, the reduced samples is drawn at the beginning of the creation of the dataset creation script. The reported common comparison sample
+contains more than XXX million person-year observations in the 1994 to 2012 timeframe restriction from the LZ data after the panel is constructed. The subsample was created with the seed 123, which is one of the most common seeds used, it was not chosen based on any other metric than it is widely used. The data generation and the model training were also run with other seeds and no seed set. The difference in the results from running with other seeds and no seed were neglicable. Therefore all the results presented in this section are based only on runs using seed 123.
+
+\section{Sample Overview and Wage Distributions}
+\draftnote{Begin with the descriptive evidence showing where BG and LZ wages agree and where top-coding creates a gap.}
+
+When looking at table 5.1 it becomes apparent why evaluating predictive performce by censoring status sperativly is imperative to gauge the quality of an estimation model. The consored person-year observations differ vastly from their uncensored counterparts, dictated by them being on the right tail of the wage distribution. The mean true wage for the censored group sits three times higher than the mean for the uncensored group, the gap narrows a little bit when the median is evaluated but the same dynamic remains.
+
+\input{overleaf_data/tables/insample_sample_composition.tex}
+
+
+Figure 5.1 vizualizes the impact of top-coding, by plotting the censored social security data (BG) with the uncensored data from the finance ministry (LZ). The distribution, accounting for some small differences, overlap each other completely up until the censoring threshold where the black graph peaks and then goes to zero, while the green graph continues on its smooth distribution trend.
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/insample_predicted_wage_density_all.png}
+  {In-sample distributions of true Lohnzettel log daily wages and model predictions for all observations.}
+  {fig:insample-wage-density-all}
+
+In figure 5.2 only observations which were censored are displayed, therefore BG data was omitted from the plot. The LZ distribution by design remains dispersed and has long right tail. The three model-based predicted distributions all predict the varation of LZ to a certain degree. XGBoost V4 follows the real distribution the closest as can be seen in the follow results tables, compared to the Tobit and the XGBoost with the restricted specifications. The numerical comparisons below determine whether this visual improvement carries over into an observation-level accuracy.
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/insample_predicted_wage_density_censored.png}
+  {In-sample distributions of true Lohnzettel log daily wages and model predictions for censored observations.}
+  {fig:insample-wage-density-censored}
+
+\section{Main In-Sample Benchmark}
+\draftnote{Compare the BG baseline, Tobit V1, XGBoost V1, and XGBoost V4 using log-wage and daily-wage-level metrics. Keep all, censored, and uncensored samples visibly separate and emphasise that this is an in-sample benchmark.}
+
+The In-Sample Benchmark, as the main comparison tool to previous work, compares BG, Tobit V1, XGBoost V1, and XGBoost V4 on the sample where all the available data is used for both training and testing, i.e. there are no seperate training and test sets. The differentiation by the time dynamic is done in 5.3. This provides an insight how closely each method can reconstruct the linked LZ wages when estimating years with where uncensored data is available, this should not be interpreted as independent future forecasting performance where only BG is available.
+
+
+
+\subsection{Log-Wage Accuracy}
+As is the case for every table going forward, the best (lowest estimation errror) is highlighted in bold. For Table 5.2 that does underline XGBoost V4 performance with the lowest log RMSE and MAE in all three differentiations, i.e. once calculated for all years and all observations and once for both consoring statuses.
+For all observations, its RMSE of 0.2129 is 25.5\% below the BG baseline of 0.2859. XGBoost V1 achieves an RMSE of 0.3025 and Tobit V1 an RMSE of 0.3523. So using a more complex model while keeping the information constant will increase performance as expected, but it take the V4 information set to beat BG overall.
+
+The censored panel provides the most relevant comparison. BG has an RMSE of 0.5737 and a mean error of $-0.3274$, confirming systematic underprediction, if an intercept-only model is assumed to be the closest equivalent to the BG baseline, once the reported social security contribution hits the contribution threshold. Tobit V1 reduces RMSE to 0.4998 and removes most of the average bias, while XGBoost V1 reduces it further to 0.3986. XGBoost V4 achieves 0.3038, a 47.0\% reduction relative to BG and a 39.2\% reduction relative to Tobit V1. Its mean error is approximately zero for the censored observations.
+
+Among uncensored observations, XGBoost V4 also achieves the smallest RMSE, with 0.2041, but the difference in MAE relative to BG is almost negligible at 0.0592 compared with 0.0601. For both V1 specifications Tobit and XGBoost the resulting estimations are off by more than the corresponding BG - LZ pairs. The inaccuracies for the BG baseline might be explained by design decisions for the underlying dataset, what is more interesting is that XGBoost V4 seems to be also capable of reducing the noise introduced by the dataset creation process.
+
+\input{overleaf_data/tables/insample_log_errors.tex}
+
+\newpage
+When plotting the prediction errors for the 3 models in Figure 5.3, the results from Table 5.2 become apparent. In so far as XGBoost V4 having the smallest prediction errors and therefore resulting in the densest graph around 0, in combination with the smallest tails. In contrast Tobit V1 and XGBoost V1 have noticably broader tails, indicating that their average prediction errors conceal more large observation level mistakes. Of further note is the performance difference of XGBoost V1 on the upper tail, which indicates that for observations that are underpredicted, the performance is similar to XGBoost V4 but for observations which are overpredicted, likely closer to the censoring threshold the performance is similar to the Tobit V1. The figure also illustrates why reporting only mean error would be misleading as a model can be unbiased on average while remaining imprecise.
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/insample_error_density_censored.png}
+  {In-sample distributions of log daily-wage prediction errors for censored observations. Errors are defined as predicted minus true Lohnzettel log daily wage.}
+  {fig:insample-error-density-censored}
+
+
+
+\subsection{Daily-Wage-Level Accuracy}
+
+\input{overleaf_data/tables/insample_wage_level_errors.tex}
+
+\section{Temporal Validation Results}
+\draftnote{Explain that the models are trained on 1994--2011 and evaluated on the 2012 holdout. Focus interpretation on the test results; use the training-to-test comparison to discuss generalisation rather than treating training accuracy as evidence of predictive validity.}
+
+\subsection{2012 Prediction Distributions}
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/temporal_test_predicted_wage_density_all.png}
+  {Distributions of true Lohnzettel log daily wages and predictions from models trained on 1994--2011 and evaluated on all 2012 observations.}
+  {fig:temporal-test-wage-density-all}
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/temporal_test_predicted_wage_density_censored.png}
+  {Distributions of true Lohnzettel log daily wages and predictions from models trained on 1994--2011 and evaluated on censored 2012 observations.}
+  {fig:temporal-test-wage-density-censored}
+
+\subsection{2012 Log-Wage Accuracy}
+
+\input{overleaf_data/tables/temporal_test_log_errors.tex}
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/temporal_test_error_density_censored.png}
+  {Distributions of log daily-wage prediction errors for censored observations in the 2012 holdout. Errors are defined as predicted minus true Lohnzettel log daily wage.}
+  {fig:temporal-test-error-density-censored}
+
+\subsection{2012 Daily-Wage-Level Accuracy}
+
+\input{overleaf_data/tables/temporal_test_wage_level_errors.tex}
+
+\subsection{Training-to-Test Generalisation}
+\draftnote{Compare the training and 2012 errors for censored observations using \cref{tab:temporal-censored-train-test}. Emphasise the larger XGBoost generalisation gap, while noting that XGBoost V4 still has the lowest 2012 log RMSE, wage-level RMSE, MAE, and median absolute error for the censored group.}
+
+\section{SHAP and Feature Importance}
+\draftnote{Use SHAP summary and importance plots to explain which variables drive XGBoost V4 predictions. Separate predictive importance from causal interpretation and discuss the dominance of the interval bounds.}
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/insample_shap_summary_xgb_v4.png}
+  {SHAP summary plot for the in-sample XGBoost V4 model. Horizontal position measures the contribution to the predicted log daily wage, while colour represents the feature value.}
+  {fig:insample-shap-summary}
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/insample_shap_importance_xgb_v4.png}
+  {Global feature importance for the in-sample XGBoost V4 model, measured by mean absolute SHAP values.}
+  {fig:insample-shap-importance}
+
+\section{Robustness and Diagnostic Checks}
+\draftnote{Prioritise three checks: the worker-level train/test experiment restricted to censored observations, XGBoost V4 without interval-bound predictors, and sample-construction diagnostics from the corrected Version 3 pipeline. Treat runtime information as computational documentation rather than a model-quality result. Do not rely on outputs from the broken Version 2 data pipeline.}
+
+\chapter{Discussion}
+\label{ch:discussion}
+
+\section{Interpretation of the Main Findings}
+\draftnote{Answer the research question directly and distinguish conclusions supported by the in-sample benchmark from those supported by temporal validation.}
+
+\section{Practical Implications}
+\draftnote{Discuss when predicted wages improve on top-coded BG values and where the uncorrected BG measure remains difficult to beat.}
+
+\section{Limitations}
+\draftnote{Discuss model dependence, sample selection, temporal transportability, extreme wages, measurement differences between BG and LZ, and limits to causal interpretation.}
+
+\chapter{Conclusion}
+\label{ch:conclusion}
+\draftnote{Summarise the question, approach, central result, contribution, limitations, and the most credible next research step without introducing new evidence.}
+
+% -----------------------------------------------------------------------------
+% Back matter
+% -----------------------------------------------------------------------------
+\appendix
+
+\chapter{Variable Definitions}
+\label{app:variables}
+\draftnote{Add a complete variable dictionary with source, construction, timing, and model inclusion in Tobit V1, XGBoost V1, and XGBoost V4.}
+
+\chapter{Additional Results}
+\label{app:additional-results}
+\draftnote{Place detailed tables, alternative plots, uncensored-sample results, and backup analyses here.}
+
+\section{Supplementary In-Sample Results}
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/insample_predicted_wage_density_uncensored.png}
+  {In-sample distributions of true Lohnzettel log daily wages and model predictions for uncensored observations.}
+  {fig:appendix-insample-wage-density-uncensored}
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/insample_error_density_all.png}
+  {In-sample distributions of log daily-wage prediction errors for all observations.}
+  {fig:appendix-insample-error-density-all}
+
+\section{Supplementary Temporal Validation Results}
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/temporal_test_predicted_wage_density_uncensored.png}
+  {Distributions of true Lohnzettel log daily wages and model predictions for uncensored observations in the 2012 holdout.}
+  {fig:appendix-temporal-test-wage-density-uncensored}
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/temporal_test_error_density_all.png}
+  {Distributions of log daily-wage prediction errors for all observations in the 2012 holdout.}
+  {fig:appendix-temporal-test-error-density-all}
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/temporal_train_predicted_wage_density_censored.png}
+  {Distributions of true Lohnzettel log daily wages and model predictions for censored observations in the 1994--2011 training sample.}
+  {fig:appendix-temporal-train-wage-density-censored}
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/temporal_train_error_density_censored.png}
+  {Distributions of log daily-wage prediction errors for censored observations in the 1994--2011 training sample.}
+  {fig:appendix-temporal-train-error-density-censored}
+
+\input{overleaf_data/tables/temporal_censored_train_test_comparison.tex}
+
+\section{Supplementary Model-Interpretation Results}
+
+\thesisfigure[0.98\textwidth]
+  {overleaf_data/figures/insample_shap_interaction_xgb_v4.png}
+  {SHAP interaction heatmap for the in-sample XGBoost V4 model.}
+  {fig:appendix-insample-shap-interaction}
+
+\input{overleaf_data/tables/insample_shap_importance.tex}
+
+\chapter{Computational Details}
+\label{app:computation}
+\draftnote{Document software versions, random seeds, the HPC environment, runtime information, and the mapping between scripts and aggregate result files.}
+
+\input{overleaf_data/tables/model_runtime.tex}
+
+\backmatter
+
+% Add a file called references.bib to the Overleaf project. The bibliography is
+% inserted automatically once that file exists; until then, the scaffold still
+% compiles as a standalone document.
+\IfFileExists{references.bib}{%
+  \bibliographystyle{apalike}
+  \bibliography{references}
+}{%
+  \chapter*{References}
+  \addcontentsline{toc}{chapter}{References}
+  \draftnote{Upload \texttt{references.bib}; this placeholder will then be replaced automatically by the bibliography.}
+}
+
+\end{document}

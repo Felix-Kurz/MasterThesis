@@ -1,0 +1,362 @@
+\documentclass[10pt]{beamer}
+
+\usetheme[progressbar=frametitle]{metropolis}
+\usepackage{appendixnumberbeamer}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{xspace}
+\usepackage{verbatim}
+
+\newcommand{\themename}{\textbf{\textsc{metropolis}}\xspace}
+
+\setbeamercolor{background canvas}{bg=white}
+
+\title{De-censoring Top-coded Wages in Austrian Social Security Data}
+\subtitle{Initial Master Thesis Presentation}
+\author{Felix Kurz \\Supervisors: 
+Rudolf Winter-Ebmer $\And$ Wolfgang Frimmel}
+\date{\today}
+
+\begin{document}
+
+\frame{\titlepage}
+
+%--------------------------------------------------
+\begin{frame}{Motivation}
+Administrative data are central to empirical labor economics, which by its nature relies heavily on wage information.
+
+\vspace{0.3cm}
+Main advantages:
+\begin{itemize}
+    \item very large samples,
+    \item reliable earnings records,
+    \item long worker-firm histories.
+\end{itemize}
+
+\vspace{0.3cm}
+Main limitation:
+\begin{itemize}
+    \item social security wage records are top-coded for high earners in Austria,
+    \item observed contribution bases then differ from true wages.
+\end{itemize}
+
+\vspace{0.3cm}
+This creates a problem for any analysis based on wages or on social security contribution bases as a proxy.
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Why Does Censoring Matter?}
+Ignoring top-coding can distort any analysis and insight drawn from the data.
+
+\vspace{0.3cm}
+To the extent that censored observations are included, results may not generalise to the full population.
+
+\vspace{0.3cm}
+The following illustrations show how censoring affects the observed wage distribution.
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Illustration: Assumed Wage Distribution}
+\centering
+\includegraphics[width=0.85\textwidth]{iniPres/Plot_1.png}
+
+\vspace{0.3cm}
+Assume wages follow a standard normal distribution.
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Illustration: The Top 10 Percent}
+\centering
+\includegraphics[width=0.85\textwidth]{iniPres/Plot_2.png}
+
+\vspace{0.3cm}
+The highest 10 percent of wages are affected by top-coding.
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Illustration: What Censoring Does}
+\centering
+\includegraphics[width=0.85\textwidth]{iniPres/Plot_3.png}
+
+\vspace{0.3cm}
+All values above the ceiling are collapsed onto a single point.
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Illustration: The Resulting Data}
+\centering
+\includegraphics[width=0.85\textwidth]{iniPres/Plot_4.png}
+
+\vspace{0.3cm}
+In practice, this creates a visible pile-up at the censoring threshold.
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Research Question}
+\begin{center}
+Can top-coded wages in Austrian administrative data be predicted more accurately than with a classical Tobit-type correction model?
+\end{center}
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{What This Thesis Does}
+The thesis will:
+\begin{enumerate}
+    \item replicate and adapt an established Tobit imputation approach,
+    \item use machine-learning methods as a flexible alternative,
+    \item evaluate both against matched Lohnzettel wages as a benchmark.
+\end{enumerate}
+
+\vspace{0.3cm}
+Additional question:
+\begin{itemize}
+    \item Can interpretable machine-learning methods provide additional insights beyond classical models?
+\end{itemize}
+\end{frame}
+
+%--------------------------------------------------
+% LITERATURE (moved before data, as requested)
+%--------------------------------------------------
+\begin{frame}{Literature Review}
+This thesis builds on two strands of literature:
+\begin{enumerate}
+    \item \textbf{Card, Heining \& Kline (2013):} wage inequality using German administrative data
+    \item \textbf{Gartner (2005):} imputation of censored wages in administrative data
+\end{enumerate}
+
+\vspace{0.3cm}
+Their roles differ:
+\begin{itemize}
+    \item Card, Heining \& Kline provide the empirical framework and motivation.
+    \item Gartner provides the direct methodological baseline.
+\end{itemize}
+\end{frame}
+
+%--------------------------------------------------
+% CARD SLIDE: rewritten to explain CHK (2013) specifically
+%--------------------------------------------------
+\begin{frame}{Literature I: Card, Heining \& Kline (2013)}
+Card, Heining \& Kline study the rise of wage inequality in West Germany using linked employer--employee data from the IAB.
+
+\vspace{0.3cm}
+\begin{itemize}
+    \item They decompose wages into worker effects, firm effects, and covariates (AKM model).
+    \item The underlying administrative wage data are top-coded.
+    \item To deal with censoring, they use a Tobit imputation procedure.
+\end{itemize}
+
+%\vspace{0.3cm}
+%This is the starting point for this thesis: replicate and improve on their Tobit-based imputation using Austrian data and modern ML methods.
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Literature II: Gartner (2005)}
+Gartner provides the direct methodological foundation.
+
+\vspace{0.3cm}
+\begin{itemize}
+    \item Administrative wage measures are institutionally determined.
+    \item Contribution ceilings create top-coding and censoring.
+    \item For high earners, observed wages are censored at the contribution ceiling and no longer reflect true earnings.
+    \item For Germany, only the resulting Tobit-estimated wages are used in practice.
+\end{itemize}
+
+\vspace{0.3cm}
+This creates a baseline to build on further and to test against.
+\end{frame}
+
+%--------------------------------------------------
+% NEW SLIDE: What is new (professors requested this after literature)
+%--------------------------------------------------
+\begin{frame}{What Is New?}
+This thesis extends the existing approach in two directions.
+
+\vspace{0.3cm}
+\textbf{1. Replication with Austrian data}
+\begin{itemize}
+    \item Adapt the Card, Heining \& Kline / Gartner Tobit imputation to Austrian administrative data.
+\end{itemize}
+
+\vspace{0.3cm}
+\textbf{2. Machine-learning alternative}
+\begin{itemize}
+    \item Because Lohnzettel (LZ) data are available, a supervised ML approach becomes possible.
+    \item LZ wages serve as the training target and evaluation benchmark.
+    \item This is the main contribution.
+\end{itemize}
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Expected Contribution}
+This thesis aims to contribute in three dimensions:
+\begin{enumerate}
+    \item \textbf{Measurement:} improved wage information in censored administrative data.
+    \item \textbf{Method:} systematic comparison of a structured econometric baseline and a flexible ML approach.
+    \item \textbf{Application:} a corrected wage measure usable in future research on inequality, mobility, and firm effects.
+\end{enumerate}
+\end{frame}
+
+%--------------------------------------------------
+% DATA SLIDES (moved after contribution, as requested)
+%--------------------------------------------------
+\begin{frame}{Administrative Data Landscape}
+The starting point is a rich set of Austrian administrative data.
+
+\vspace{0.3cm}
+The available sources include:
+\begin{itemize}
+    \item \textbf{BG}: social security contribution basis and employment information,
+    \item \textbf{Stammdaten}: worker demographics (gender, birth year, nationality),
+    \item \textbf{Qual}: spell information (live births), and worker qualifications,
+    \item \textbf{DG data}: firm-level characteristics (region, industry).
+\end{itemize}
+
+\vspace{0.3cm}
+These data are rich in worker, job, and firm information, but the wage measure itself is censored.
+\end{frame}
+
+%--------------------------------------------------
+\begin{frame}{Why Lohnzettel Data Matter}
+The availability of \textbf{Lohnzettel (LZ)} data changes the empirical setting.
+
+\vspace{0.3cm}
+LZ data provide:
+\begin{itemize}
+    \item a wage measure that is not subject to top-coding,
+    \item matched BG-LZ observations for the same worker-firm-year.
+\end{itemize}
+
+\vspace{0.3cm}
+This creates new opportunities:
+\begin{itemize}
+    \item not only to correct censored wages,
+    \item but also to assess how well different methods recover true wages,
+    \item and to build a model that can impute wages even when no LZ data are available.
+\end{itemize}
+\end{frame}
+
+%--------------------------------------------------
+% EMPIRICAL APPROACH (renamed from "Implication", motivation text cut)
+%--------------------------------------------------
+\begin{frame}{Empirical Approach}
+The thesis will proceed in three steps:
+\begin{enumerate}
+    \item Adapt a Tobit imputation model as a structured baseline.
+    \item Train an XGBoost model as a flexible ML alternative.
+    \item Evaluate both against matched LZ wages.
+\end{enumerate}
+\end{frame}
+
+%--------------------------------------------------
+% TOBIT METHODOLOGY (NEW, with equation from code)
+%--------------------------------------------------
+\begin{frame}{Methodology I: Tobit Imputation}
+The baseline follows a Tobit-type interval regression.
+
+\vspace{0.2cm}
+\textbf{Model:}
+\[
+\ln w_{it}^{*} = \mathbf{x}_{it}' \boldsymbol{\beta} + \varepsilon_{it}, \quad \varepsilon_{it} \sim N(0, \sigma^2)
+\]
+
+For censored observations, only $\ln w_{it}^{*} \in [\text{observed}, \; \text{ceiling}]$ is known. %//vielleicht ein bisserl zu theoretisch?
+
+\vspace{0.2cm}
+\textbf{Covariates} $\mathbf{x}_{it}$:
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\begin{itemize}
+    \item age
+    \item leave-one-out mean wage
+    \item leave-one-out censoring share
+    \item firm size, firm size$^2$
+\end{itemize}
+\end{column}
+\begin{column}{0.48\textwidth}
+\begin{itemize}
+    \item coworker mean wage
+    \item coworker censoring share
+    \item one-year, one-person, small-firm dummies
+\end{itemize}
+\end{column}
+\end{columns}
+
+\vspace{0.2cm}
+Estimated separately by \textbf{gender} $\times$ \textbf{age group}, year by year.
+\end{frame}
+
+%--------------------------------------------------
+% XGBOOST METHODOLOGY (NEW, with inputs from code)
+%--------------------------------------------------
+\begin{frame}{Methodology II: XGBoost}
+The ML alternative uses gradient-boosted trees (XGBoost).
+
+\vspace{0.2cm}
+\textbf{Target:} LZ daily wage (log, CPI-adjusted to 2000 euros).
+
+\vspace{0.2cm}
+\textbf{Features} (derived from BG data only):
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\begin{itemize}
+    \item all Tobit covariates
+    \item gender, birth year
+    \item number of observed years
+    \item censoring flag
+\end{itemize}
+\end{column}
+\begin{column}{0.48\textwidth}
+\begin{itemize}
+    \item interval bounds
+    \item year
+    \item federal state (Bundesland)
+    \item nationality proxy (STSL)
+\end{itemize}
+\end{column}
+\end{columns}
+
+\vspace{0.2cm}
+\textbf{Setup:}
+\begin{itemize}
+    \item 80/20 train--test split,
+    \item 5-fold cross-validation with early stopping.
+\end{itemize}
+
+%\vspace{0.2cm}
+%Key advantage: the model is trained on BG features and can predict wages for future data \textbf{without} LZ.
+\end{frame}
+
+\begin{comment}
+ %--------------------------------------------------
+\begin{frame}{Conclusion}
+Top-coding creates a relevant measurement problem in administrative wage data.
+
+\vspace{0.3cm}
+This thesis asks whether:
+\begin{itemize}
+    \item censored wages can be recovered more credibly,
+    \item rich worker--firm information improves prediction,
+    \item flexible methods improve on standard correction models.
+\end{itemize}
+
+\vspace{0.3cm}
+The key empirical opportunity is the availability of matched LZ wages as a benchmark.
+\end{frame}
+
+%--------------------------------------------------   
+\end{comment}
+
+
+
+\begin{frame}{References}
+\footnotesize
+Card, D., Heining, J., \& Kline, P. (2013). Workplace heterogeneity and the rise of West German wage inequality. \emph{Quarterly Journal of Economics}, 128(3), 967--1015.
+
+\vspace{0.15cm}
+Gartner, H. (2005). \emph{The imputation of wages above the contribution limit with the German IAB employment sample}. FDZ Methodenreport, 2, 2005.
+
+\end{frame}
+
+\end{document}

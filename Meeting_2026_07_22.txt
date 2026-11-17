@@ -1,0 +1,65 @@
+Introduction
+Motivation
+Institutional Setting and the Censoring Problem
+Research Question
+Related Literature
+Contribution
+Structure of the Thesis
+
+
+Data and Sample Construction
+Austrian Social-Security Data (BG)
+Lohnzettel Data (LZ)
+Data Linkage and Common Comparison Sample
+Outcome and Predictor Variables
+Censoring Status and Descriptive Statistics
+Sample Overview and Wage Distributions
+
+
+Empirical Methods
+Prediction Problem
+Observed BG Wage as a Baseline
+
+
+Tobit-Style Wage Imputation
+Standard V1 Specification
+
+
+
+XGBoost Wage Prediction
+Gradient-Boosted Regression Trees
+V1 and V4 Feature Sets
+Training and Hyperparameters
+Model Interpretation with SHAP
+
+
+Evaluation
+-Design
+Main In-Sample Benchmark
+Temporal Validation
+
+-Metrics
+Log-Wage Errors
+Daily-Wage-Level Errors
+Comparison Groups
+
+
+Results
+Tobit Results
+
+Standard V1 Specification
+
+
+XGBoost Results
+V1 Specification
+V4 Specification
+
+Main In-Sample Model Comparison
+SHAP and Feature Importance (note the existence of run without bounds, but were worse)
+
+Temporal Validation Results
+Robustness and Diagnostic Checks (note, that the different designs ie temporal split / only censored, already check for robustness in a sense)
+
+
+
+xgboost runtime outputs adding

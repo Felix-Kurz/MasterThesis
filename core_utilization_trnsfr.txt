@@ -1,0 +1,279 @@
+Sys.getpid()
+packageVersion("xgboost")
+
+Sys.getenv(c(
+  "OMP_NUM_THREADS", "OMP_THREAD_LIMIT", "OMP_DYNAMIC",
+  "OMP_PROC_BIND", "OMP_PLACES",
+  "PBS_NP", "NCPUS"
+))
+
+system(sprintf("cat /proc/%d/cpuset", Sys.getpid()))
+system(sprintf(
+  "grep -E 'Threads|Cpus_allowed_list|Mems_allowed_list' /proc/%d/status",
+  Sys.getpid()
+))
+
+> Sys.getpid()
+[1] 306298
+> packageVersion("xgboost")
+[1] ‘1.0.0.1’
+> 
+> Sys.getenv(c(
++     "OMP_NUM_THREADS", "OMP_THREAD_LIMIT", "OMP_DYNAMIC",
++     "OMP_PROC_BIND", "OMP_PLACES",
++     "PBS_NP", "NCPUS"
++ ))
+ OMP_NUM_THREADS OMP_THREAD_LIMIT      OMP_DYNAMIC    OMP_PROC_BIND       OMP_PLACES           PBS_NP            NCPUS 
+             "4"               ""               ""               ""               ""               ""             "64" 
+> 
+> system(sprintf("cat /proc/%d/cpuset", Sys.getpid()))
+/PBSPro/277560.mach
+> system(sprintf(
++     "grep -E 'Threads|Cpus_allowed_list|Mems_allowed_list' /proc/%d/status",
++     Sys.getpid()
++ ))
+Threads:	6
+Cpus_allowed_list:	1280-1343
+Mems_allowed_list:	160-167
+> 
+
+
+
+
+
+> # Run in a separate R session inside the same capsule (OMP_NUM_THREADS=60).
+> # This briefly competes with the ongoing model run for CPU time.
+> # Compare training time only: identical data, seed, settings, and 200 rounds.
+> local({
++   set.seed(123)
++   cat("OMP_NUM_THREADS:", Sys.getenv("OMP_NUM_THREADS"), "\n")
++   cat("Watch this test from a terminal: top -p", Sys.getpid(), "\n")
++ 
++   x <- matrix(rnorm(200000L * 40L), ncol = 40L)
++   y <- x[, 1] * x[, 2] + sin(x[, 3]) + rnorm(nrow(x), sd = 0.2)
++   results <- data.frame(Threads = integer(), Seconds = numeric(),
++                         Average_CPU_Cores = numeric())
++   for (threads in c(4L, 60L)) {
++     # Fresh DMatrix for each run avoids reusing the previous fit's data cache.
++     # Data preparation and DMatrix creation are excluded from training time.
++     d <- xgboost::xgb.DMatrix(x, label = y)
++     cat("\n=== Training with", threads, "threads ===\n")
++     set.seed(123)
++     elapsed <- system.time({
++       fit <- xgboost::xgb.train(
++         params = list(objective = "reg:squarederror", eval_metric = "rmse",
++                       tree_method = "hist", max_depth = 8L, nthread = threads),
++         data = d, nrounds = 200L, watchlist = list(train = d),
++         verbose = 1, print_every_n = 10L
++       )
++     })
++     results <- rbind(results, data.frame(
++       Threads = threads,
++       Seconds = elapsed[["elapsed"]],
++       Average_CPU_Cores = round(
++         sum(elapsed[c("user.self", "sys.self")]) / elapsed[["elapsed"]], 1)
++     ))
++     print(elapsed)
++     rm(fit, d)
++     invisible(gc())
++   }
++   cat("\n=== 4 versus 60 threads: training-time comparison ===\n")
++   print(results, row.names = FALSE)
++   if (all(results$Seconds > 0)) {
++     speedup <- results$Seconds[1] / results$Seconds[2]
++     cat(sprintf("60-thread speedup over 4 threads: %.2fx (ideal linear scaling: 15x)\n",
++                 speedup))
++   }
++   cat("Single-run synthetic histogram benchmark; full-model scaling may differ.\n")
++ })
+OMP_NUM_THREADS: 60 
+Watch this test from a terminal: top -p 318876 
+
+=== Training with 4 threads ===
+[1]	train-rmse:1.119136 
+[11]	train-rmse:0.358758 
+[21]	train-rmse:0.281273 
+[31]	train-rmse:0.265424 
+[41]	train-rmse:0.258343 
+[51]	train-rmse:0.246890 
+[61]	train-rmse:0.240779 
+[71]	train-rmse:0.235351 
+[81]	train-rmse:0.230122 
+[91]	train-rmse:0.223842 
+[101]	train-rmse:0.219013 
+[111]	train-rmse:0.212696 
+
+Timing stopped at: 81.35 0.376 22.85
+> # Run in a separate R session inside the same capsule (OMP_NUM_THREADS=60).
+> # This briefly competes with the ongoing model run for CPU time.
+> # Compare training time only: identical data, seed, settings, and 200 rounds.
+> local({
++   set.seed(123)
++   cat("OMP_NUM_THREADS:", Sys.getenv("OMP_NUM_THREADS"), "\n")
++   cat("Watch this test from a terminal: top -p", Sys.getpid(), "\n")
++ 
++   x <- matrix(rnorm(200000L * 40L), ncol = 40L)
++   y <- x[, 1] * x[, 2] + sin(x[, 3]) + rnorm(nrow(x), sd = 0.2)
++   results <- data.frame(Threads = integer(), Seconds = numeric(),
++                         Average_CPU_Cores = numeric())
++   for (threads in c(4L, 60L)) {
++     # Fresh DMatrix for each run avoids reusing the previous fit's data cache.
++     # Data preparation and DMatrix creation are excluded from training time.
++     d <- xgboost::xgb.DMatrix(x, label = y)
++     cat("\n=== Training with", threads, "threads ===\n")
++     set.seed(123)
++     elapsed <- system.time({
++       fit <- xgboost::xgb.train(
++         params = list(objective = "reg:squarederror", eval_metric = "rmse",
++                       tree_method = "hist", max_depth = 8L, nthread = threads),
++         data = d, nrounds = 10L, watchlist = list(train = d),
++         verbose = 1, print_every_n = 10L
++       )
++     })
++     results <- rbind(results, data.frame(
++       Threads = threads,
++       Seconds = elapsed[["elapsed"]],
++       Average_CPU_Cores = round(
++         sum(elapsed[c("user.self", "sys.self")]) / elapsed[["elapsed"]], 1)
++     ))
++     print(elapsed)
++     rm(fit, d)
++     invisible(gc())
++   }
++   cat("\n=== 4 versus 60 threads: training-time comparison ===\n")
++   print(results, row.names = FALSE)
++   if (all(results$Seconds > 0)) {
++     speedup <- results$Seconds[1] / results$Seconds[2]
++     cat(sprintf("60-thread speedup over 4 threads: %.2fx (ideal linear scaling: 15x)\n",
++                 speedup))
++   }
++   cat("Single-run synthetic histogram benchmark; full-model scaling may differ.\n")
++ })
+OMP_NUM_THREADS: 60 
+Watch this test from a terminal: top -p 318876 
+
+=== Training with 4 threads ===
+[1]	train-rmse:1.119136 
+[10]	train-rmse:0.383721 
+   user  system elapsed 
+ 12.116   0.148   3.988 
+
+=== Training with 60 threads ===
+[1]	train-rmse:1.119140 
+[10]	train-rmse:0.383722 
+   user  system elapsed 
+459.489  32.698  11.062 
+
+=== 4 versus 60 threads: training-time comparison ===
+ Threads Seconds Average_CPU_Cores
+       4   3.988               3.1
+      60  11.062              44.5
+60-thread speedup over 4 threads: 0.36x (ideal linear scaling: 15x)
+Single-run synthetic histogram benchmark; full-model scaling may differ.
+> # Run in a separate R session inside the same capsule (OMP_NUM_THREADS=60).
+> # This briefly competes with the ongoing model run for CPU time.
+> # Compare training time only: identical data, seed, settings, and 200 rounds.
+> local({
++   set.seed(123)
++   cat("OMP_NUM_THREADS:", Sys.getenv("OMP_NUM_THREADS"), "\n")
++   cat("Watch this test from a terminal: top -p", Sys.getpid(), "\n")
++ 
++   x <- matrix(rnorm(200000L * 40L), ncol = 40L)
++   y <- x[, 1] * x[, 2] + sin(x[, 3]) + rnorm(nrow(x), sd = 0.2)
++   results <- data.frame(Threads = integer(), Seconds = numeric(),
++                         Average_CPU_Cores = numeric())
++   for (threads in c(4L, 60L)) {
++     # Fresh DMatrix for each run avoids reusing the previous fit's data cache.
++     # Data preparation and DMatrix creation are excluded from training time.
++     d <- xgboost::xgb.DMatrix(x, label = y)
++     cat("\n=== Training with", threads, "threads ===\n")
++     set.seed(123)
++     elapsed <- system.time({
++       fit <- xgboost::xgb.train(
++         params = list(objective = "reg:squarederror", eval_metric = "rmse",
++                       tree_method = "hist", max_depth = 8L, nthread = threads),
++         data = d, nrounds = 200L, watchlist = list(train = d),
++         verbose = 1, print_every_n = 10L
++       )
++     })
++     results <- rbind(results, data.frame(
++       Threads = threads,
++       Seconds = elapsed[["elapsed"]],
++       Average_CPU_Cores = round(
++         sum(elapsed[c("user.self", "sys.self")]) / elapsed[["elapsed"]], 1)
++     ))
++     print(elapsed)
++     rm(fit, d)
++     invisible(gc())
++   }
++   cat("\n=== 4 versus 60 threads: training-time comparison ===\n")
++   print(results, row.names = FALSE)
++   if (all(results$Seconds > 0)) {
++     speedup <- results$Seconds[1] / results$Seconds[2]
++     cat(sprintf("60-thread speedup over 4 threads: %.2fx (ideal linear scaling: 15x)\n",
++                 speedup))
++   }
++   cat("Single-run synthetic histogram benchmark; full-model scaling may differ.\n")
++ })
+OMP_NUM_THREADS: 60 
+Watch this test from a terminal: top -p 318876 
+
+=== Training with 4 threads ===
+[1]	train-rmse:1.119136 
+[11]	train-rmse:0.358758 
+[21]	train-rmse:0.281273 
+[31]	train-rmse:0.265424 
+[41]	train-rmse:0.258343 
+[51]	train-rmse:0.246890 
+[61]	train-rmse:0.240779 
+[71]	train-rmse:0.235351 
+[81]	train-rmse:0.230122 
+[91]	train-rmse:0.223842 
+[101]	train-rmse:0.219013 
+[111]	train-rmse:0.212696 
+[121]	train-rmse:0.208177 
+[131]	train-rmse:0.203972 
+[141]	train-rmse:0.199891 
+[151]	train-rmse:0.195593 
+[161]	train-rmse:0.191360 
+[171]	train-rmse:0.187565 
+[181]	train-rmse:0.183195 
+[191]	train-rmse:0.179206 
+[200]	train-rmse:0.176064 
+   user  system elapsed 
+156.366   0.436  43.477 
+
+=== Training with 60 threads ===
+[1]	train-rmse:1.119140 
+[11]	train-rmse:0.358760 
+[21]	train-rmse:0.281274 
+[31]	train-rmse:0.265425 
+[41]	train-rmse:0.258343 
+[51]	train-rmse:0.246891 
+[61]	train-rmse:0.240780 
+[71]	train-rmse:0.235352 
+[81]	train-rmse:0.230123 
+[91]	train-rmse:0.223842 
+[101]	train-rmse:0.219013 
+[111]	train-rmse:0.212697 
+[121]	train-rmse:0.208178 
+[131]	train-rmse:0.203973 
+[141]	train-rmse:0.199891 
+[151]	train-rmse:0.195593 
+[161]	train-rmse:0.191361 
+[171]	train-rmse:0.187566 
+[181]	train-rmse:0.183196 
+[191]	train-rmse:0.179206 
+[200]	train-rmse:0.176064 
+    user   system  elapsed 
+8241.267  532.501  161.023 
+
+=== 4 versus 60 threads: training-time comparison ===
+ Threads Seconds Average_CPU_Cores
+       4  43.477               3.6
+      60 161.023              54.5
+60-thread speedup over 4 threads: 0.27x (ideal linear scaling: 15x)
+Single-run synthetic histogram benchmark; full-model scaling may differ.
+> 
+
+
